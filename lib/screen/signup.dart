@@ -40,7 +40,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
             // LOGO
             Center(
-              child: Image.asset("assets/logo.png", height: 80),
+              child: Image.asset("assets/logo.png", height: 80), // image for logo
             ),
 
             const SizedBox(height: 25),
