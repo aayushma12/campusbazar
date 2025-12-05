@@ -23,7 +23,7 @@ class WelcomeScreen extends StatelessWidget {
                 const Text(
                   "Welcome to CampusBazar",
                   style: TextStyle(
-                    fontSize: 22,
+                    fontSize: 22, // this is for font size
                     fontWeight: FontWeight.bold,
                   ),
                 )
