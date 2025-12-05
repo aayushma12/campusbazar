@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
             // LOGO
             Center(
               child: Image.asset(
-                "assets/logo.png", // image for logo
+                "assets/logo.png",
                 height: 80,
               ),
             ),
@@ -154,7 +154,9 @@ class _LoginScreenState extends State<LoginScreen> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.pushNamed(context, "/dashboard");},
+
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   shape: RoundedRectangleBorder(
