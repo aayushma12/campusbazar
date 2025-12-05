@@ -14,6 +14,7 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     // Navigate to first onboarding screen after 1.2 seconds
     Future.delayed(const Duration(milliseconds: 1200), () {
+      // ignore: use_build_context_synchronously
       Navigator.pushNamed(context, '/onboarding1');
     });
   }
