@@ -38,7 +38,7 @@ class Onboarding2 extends StatelessWidget {
                   Text(
                     "List your items for sale in just a few taps. Reach a wide audience of students looking for great deals on campus.",
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16),
+                    style: TextStyle(fontSize: 17),
                   ),
                 ],
               ),
