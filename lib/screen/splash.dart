@@ -12,8 +12,8 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Navigate to first onboarding screen after 1.2 seconds
-    Future.delayed(const Duration(milliseconds: 1200), () {
+    // Navigate to first onboarding screen after 5 seconds
+    Future.delayed(const Duration(milliseconds: 5000), () {
       // ignore: use_build_context_synchronously
       Navigator.pushNamed(context, '/onboarding1');
     });
@@ -25,7 +25,7 @@ class _SplashScreenState extends State<SplashScreen> {
       backgroundColor: Colors.white,
       body: Center(
         child: Image.asset(
-          "assets/logo.png",
+          "assets/image/logo.png",
           width: 180,
           height: 180,
         ),

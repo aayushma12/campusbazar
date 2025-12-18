@@ -15,7 +15,7 @@ class Onboarding3 extends StatelessWidget {
               flex: 6,
               child: Center(
                 child: Image.asset(
-                  "assets/onboarding3.png",
+                  "assets/image/onboarding3.png",
                   height: 240,
                 ),
               ),
