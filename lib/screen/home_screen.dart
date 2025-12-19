@@ -27,7 +27,32 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                const Icon(Icons.notifications_none),
+
+                // 🔔 Notification Popup (No notifications)
+                PopupMenuButton<int>(
+                  icon: const Icon(Icons.notifications_none),
+                  offset: const Offset(0, 45),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      enabled: false,
+                      child: SizedBox(
+                        width: 200,
+                        child: Center(
+                          child: Text(
+                            "No new notifications",
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
 
