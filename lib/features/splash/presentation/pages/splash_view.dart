@@ -1,0 +1,66 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+
+class SplashView extends StatefulWidget {
+  const SplashView({super.key});
+
+  @override
+  State<SplashView> createState() => _SplashViewState();
+}
+
+class _SplashViewState extends State<SplashView> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Start the 5-second countdown
+    _timer = Timer(const Duration(milliseconds: 5000), () {
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, '/onboarding1');
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Pre-load the image into the system cache to prevent lag during build
+    precacheImage(const AssetImage("assets/image/logo.png"), context);
+  }
+
+  @override
+  void dispose() {
+    // Crucial: Cancel the timer if the user closes the app before it fires
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Sprint 3 Requirement: Mobile & Tablet Responsiveness
+    final double screenWidth = MediaQuery.of(context).size.width;
+    
+    // Logic: If width > 600 (Tablet), make the logo larger
+    final double logoSize = screenWidth > 600 ? 300 : 180;
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: FadeInImage(
+          // Placeholder can be a simple transparent box or a loading spinner
+          placeholder: const AssetImage("assets/image/logo.png"), 
+          image: const AssetImage("assets/image/logo.png"),
+          fadeOutDuration: const Duration(milliseconds: 300),
+          fadeInDuration: const Duration(milliseconds: 300),
+          width: logoSize,
+          height: logoSize,
+          // Optimization: Forces the engine to decode only at the size needed
+          imageErrorBuilder: (context, error, stackTrace) {
+            return const Icon(Icons.error_outline, size: 50, color: Colors.red);
+          },
+        ),
+      ),
+    );
+  }
+}
