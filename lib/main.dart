@@ -1,18 +1,37 @@
+
+import 'package:campus_bazar/features/auth/presentation/pages/welcome_view.dart';
+import 'package:campus_bazar/features/dashboard/presentation/pages/dashboard_page.dart';
+import 'package:campus_bazar/features/onboarding/presentation/pages/onboarding1_view.dart';
+import 'package:campus_bazar/features/onboarding/presentation/pages/onboarding2_view.dart';
+import 'package:campus_bazar/features/onboarding/presentation/pages/onboarding3_view.dart';
+import 'package:campus_bazar/features/splash/presentation/pages/splash_view.dart';
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart'; // 1. Add this import
 
-import 'package:campus_bazar/screen/splash.dart';
-import 'package:campus_bazar/screen/onboarding1.dart';
-import 'package:campus_bazar/screen/onboarding2.dart';
-import 'package:campus_bazar/screen/onboarding3.dart';
+// Import your Model and the Dashboard
+import 'features/auth/data/models/user_model.dart';
 
-import 'package:campus_bazar/screen/login.dart';
-import 'package:campus_bazar/screen/signup.dart';
-import 'package:campus_bazar/screen/forgot_password.dart';
 
-import 'package:campus_bazar/screen/welcome.dart';
-import 'package:campus_bazar/screen/dashboard.dart';
+// Import your other refactored pages
 
-void main() {
+import 'features/auth/presentation/pages/login_page.dart';
+import 'features/auth/presentation/pages/signup_page.dart';
+import 'features/auth/presentation/pages/forgot_password_page.dart';
+
+// 2. Change main to async
+void main() async {
+  // 3. Ensure Flutter framework is ready
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 4. Initialize Hive
+  await Hive.initFlutter();
+
+  // 5. Register the Adapter (This allows Hive to understand your UserModel)
+  Hive.registerAdapter(UserModelAdapter());
+
+  // 6. Open the User Box (Think of this as opening a specific database table)
+  await Hive.openBox<UserModel>('user_box');
+
   runApp(const CampusBazarApp());
 }
 
@@ -27,18 +46,19 @@ class CampusBazarApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
         fontFamily: 'Poppins',
+        useMaterial3: true,
       ),
       initialRoute: '/',
       routes: {
-        '/': (_) => const SplashScreen(),
-        '/onboarding1': (_) => const Onboarding1(),
-        '/onboarding2': (_) => const Onboarding2(),
-        '/onboarding3': (_) => const Onboarding3(),
-        '/login': (_) => const LoginScreen(),
-        '/signup': (_) => const SignupScreen(),
-        '/forgot': (_) => const ForgotPasswordScreen(),
-        '/welcome': (_) => const WelcomeScreen(),
-        '/dashboard': (_) => const Dashboard(),
+        '/': (_) => const SplashView(),
+        '/onboarding1': (_) => const Onboarding1View(),
+        '/onboarding2': (_) => const Onboarding2View(),
+        '/onboarding3': (_) => const Onboarding3View(),
+        '/welcome': (_) => const WelcomeView(),
+        '/login': (_) => const LoginPage(),
+        '/signup': (_) => const SignupPage(),
+        '/forgot': (_) => const ForgotPasswordPage(),
+        '/dashboard': (_) => const DashboardPage()
       },
     );
   }
