@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
-import '../../data/datasources/local/auth_local_data_source.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../presentation/state/auth_state.dart';
+import '../../presentation/view_model/auth_viewmodel.dart';
 
-class SignupPage extends StatefulWidget {
+class SignupPage extends ConsumerStatefulWidget {
   const SignupPage({super.key});
 
   @override
-  State<SignupPage> createState() => _SignupPageState();
+  ConsumerState<SignupPage> createState() => _SignupPageState();
 }
 
-class _SignupPageState extends State<SignupPage> {
+class _SignupPageState extends ConsumerState<SignupPage> {
   bool passwordVisible = false;
   bool confirmPasswordVisible = false;
 
@@ -17,9 +19,6 @@ class _SignupPageState extends State<SignupPage> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  final _localDataSource = AuthLocalDatasourceImpl();
-
-  // 1️⃣ Form key
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -35,6 +34,26 @@ class _SignupPageState extends State<SignupPage> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final bool isTablet = size.width > 600;
+    final authState = ref.watch(authViewModelProvider);
+
+    ref.listen<AuthState>(authViewModelProvider, (previous, next) {
+      if (next.status == AuthStatus.registered) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registration successful!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushReplacementNamed(context, '/login');
+      } else if (next.status == AuthStatus.error && next.errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -52,7 +71,7 @@ class _SignupPageState extends State<SignupPage> {
           child: SizedBox(
             width: isTablet ? 450 : double.infinity,
             child: Form(
-              key: _formKey, // 2️⃣ Attach form key
+              key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -71,7 +90,10 @@ class _SignupPageState extends State<SignupPage> {
                           style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                         ),
                         SizedBox(height: 4),
-                        Text("Fill in the details to get started", style: TextStyle(color: Colors.grey)),
+                        Text(
+                          "Fill in the details to get started",
+                          style: TextStyle(color: Colors.grey),
+                        ),
                       ],
                     ),
                   ),
@@ -107,7 +129,7 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) return "Email is required";
-                      if (!value.contains("@")) return "Enter a valid email";
+                      if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) return "Enter a valid email";
                       return null;
                     },
                   ),
@@ -164,33 +186,19 @@ class _SignupPageState extends State<SignupPage> {
                     width: double.infinity,
                     height: isTablet ? 56 : 48,
                     child: ElevatedButton(
-                      onPressed: () async {
-                        // 3️⃣ Validate form before signup
-                        if (_formKey.currentState!.validate()) {
-                          await _localDataSource.registerUser(
-                            _emailController.text.trim(),
-                            _passwordController.text,
-                            _fullNameController.text.trim(),
-                          );
-
-                          if (!mounted) return;
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Registration Successful!")),
-                          );
-
-                          Navigator.pushReplacementNamed(context, "/login");
-                        }
-                      },
+                      onPressed: authState.isLoading ? null : _handleSignup,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                       ),
-                      child: const Text("Sign Up", style: TextStyle(fontSize: 18, color: Colors.white)),
+                      child: authState.isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text("Sign Up", style: TextStyle(fontSize: 18, color: Colors.white)),
                     ),
                   ),
-
                   const SizedBox(height: 25),
+
+                  // LOGIN LINK
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -212,5 +220,15 @@ class _SignupPageState extends State<SignupPage> {
         ),
       ),
     );
+  }
+
+  void _handleSignup() {
+    if (_formKey.currentState!.validate()) {
+      ref.read(authViewModelProvider.notifier).register(
+        name: _fullNameController.text.trim(), // ✅ Send full name
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+    }
   }
 }

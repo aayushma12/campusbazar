@@ -1,15 +1,3 @@
 
-import 'package:campus_bazar/core/error/failures.dart';
-import 'package:dartz/dartz.dart';
+// This file is deprecated. Use auth_viewmodel.dart instead.
 
-import '../entities/user.dart';
-import '../repositories/auth_repository.dart';
-
-class Login {
-  final AuthRepository repository;
-  Login(this.repository);
-
-  Future<Either<Failure, User>> call(String email, String password) {
-    return repository.login(email, password);
-  }
-}

@@ -153,6 +153,9 @@ class _LoginPageState extends State<LoginPage> {
                     child: ElevatedButton(
                       onPressed: () async {
                         if (_formKey.currentState!.validate()) {
+                          final messenger = ScaffoldMessenger.of(context);
+                          final navigator = Navigator.of(context);
+
                           final user = await _localDataSource.validateLogin(
                             _emailController.text.trim(),
                             _passwordController.text,
@@ -161,12 +164,12 @@ class _LoginPageState extends State<LoginPage> {
                           if (!mounted) return;
 
                           if (user != null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            messenger.showSnackBar(
                               SnackBar(content: Text("Welcome back, ${user.fullName}!")),
                             );
-                            Navigator.pushReplacementNamed(context, "/dashboard");
+                            navigator.pushReplacementNamed("/dashboard");
                           } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            messenger.showSnackBar(
                               const SnackBar(content: Text("Invalid email or password")),
                             );
                           }

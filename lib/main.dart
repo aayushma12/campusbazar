@@ -1,11 +1,7 @@
 
-import 'package:campus_bazar/features/auth/presentation/pages/welcome_view.dart';
-import 'package:campus_bazar/features/dashboard/presentation/pages/dashboard_page.dart';
-import 'package:campus_bazar/features/onboarding/presentation/pages/onboarding1_view.dart';
-import 'package:campus_bazar/features/onboarding/presentation/pages/onboarding2_view.dart';
-import 'package:campus_bazar/features/onboarding/presentation/pages/onboarding3_view.dart';
-import 'package:campus_bazar/features/splash/presentation/pages/splash_view.dart';
+import 'package:campus_bazar/features/auth/presentation/pages/SignupPage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart'; // 1. Add this import
 
 // Import your Model and the Dashboard
@@ -15,8 +11,13 @@ import 'features/auth/data/models/user_model.dart';
 // Import your other refactored pages
 
 import 'features/auth/presentation/pages/login_page.dart';
-import 'features/auth/presentation/pages/signup_page.dart';
 import 'features/auth/presentation/pages/forgot_password_page.dart';
+import 'features/auth/presentation/pages/welcome_view.dart';
+import 'features/dashboard/presentation/pages/dashboard_page.dart';
+import 'features/onboarding/presentation/pages/onboarding1_view.dart';
+import 'features/onboarding/presentation/pages/onboarding2_view.dart';
+import 'features/onboarding/presentation/pages/onboarding3_view.dart';
+import 'features/splash/presentation/pages/splash_view.dart';
 
 // 2. Change main to async
 void main() async {
@@ -40,26 +41,29 @@ class CampusBazarApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: "CampusBazar",
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        fontFamily: 'Poppins',
-        useMaterial3: true,
+    return ProviderScope(
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: "CampusBazar",
+        theme: ThemeData(
+          primarySwatch: Colors.green,
+          fontFamily: 'Poppins',
+          useMaterial3: true,
+        ),
+        initialRoute: '/',
+        routes: {
+          '/': (_) => const SplashView(),
+          '/onboarding1': (_) => const Onboarding1View(),
+          '/onboarding2': (_) => const Onboarding2View(),
+          '/onboarding3': (_) => const Onboarding3View(),
+          '/welcome': (_) => const WelcomeView(),
+          '/login': (_) => const LoginPage(),
+          '/register': (_) => const SignupPage(),
+          '/signup': (_) => const SignupPage(),
+          '/forgot': (_) => const ForgotPasswordPage(),
+          '/dashboard': (_) => const DashboardPage()
+        },
       ),
-      initialRoute: '/',
-      routes: {
-        '/': (_) => const SplashView(),
-        '/onboarding1': (_) => const Onboarding1View(),
-        '/onboarding2': (_) => const Onboarding2View(),
-        '/onboarding3': (_) => const Onboarding3View(),
-        '/welcome': (_) => const WelcomeView(),
-        '/login': (_) => const LoginPage(),
-        '/signup': (_) => const SignupPage(),
-        '/forgot': (_) => const ForgotPasswordPage(),
-        '/dashboard': (_) => const DashboardPage()
-      },
     );
   }
 }

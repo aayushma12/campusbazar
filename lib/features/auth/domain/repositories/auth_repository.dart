@@ -1,12 +1,18 @@
-
 import 'package:campus_bazar/core/error/failures.dart';
 import 'package:dartz/dartz.dart';
+import '../entities/auth_entity.dart';
 
-import '../entities/user.dart';
+abstract class IAuthRepository {
+  Future<Either<Failure, AuthEntity>> register({
+    required String name,
+    required String email,
+    required String password,
+  });
 
-abstract class AuthRepository {
-  Future<Either<Failure, User>> login(String email, String password);
-  Future<Either<Failure, User>> signup(String email, String password, {String? name});
-  Future<Either<Failure, User?>> getCachedUser();
-  Future<Either<Failure, void>> logout();
+  Future<Either<Failure, AuthEntity>> login({
+    required String email,
+    required String password,
+  });
+
+  Future<Either<Failure, bool>> logout();
 }

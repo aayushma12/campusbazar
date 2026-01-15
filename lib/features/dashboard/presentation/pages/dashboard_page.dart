@@ -4,8 +4,6 @@ import 'package:campus_bazar/features/tutor/presentation/pages/tutor_page.dart';
 import 'package:campus_bazar/features/wishlist/presentation/pages/wishlist_page.dart';
 import 'package:flutter/material.dart';
 
-// Import your refactored pages
-
 class DashboardPage extends StatefulWidget {
   // Pass the user model here to display personalized data in the Profile tab
   final UserModel? user;
@@ -21,7 +19,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     // List of actual pages instead of placeholders
-    final List<Widget> _pages = [
+    final List<Widget> pages = [
       const Center(child: Text("Home Page Content")), // You can update this later
       const TutorPage(),
       const Center(child: Text("Add Product Page")), // You can update this later
@@ -55,7 +53,7 @@ class _DashboardPageState extends State<DashboardPage> {
           Expanded(
             child: IndexedStack(
               index: _currentIndex,
-              children: _pages,
+              children: pages,
             ),
           ),
         ],

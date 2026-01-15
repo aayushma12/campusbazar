@@ -1,75 +1,95 @@
-import 'package:dartz/dartz.dart';
 import 'package:campus_bazar/core/error/failures.dart';
-import 'package:campus_bazar/features/auth/data/datasources/local/auth_local_data_source.dart';
-import 'package:campus_bazar/features/auth/data/models/user_model.dart';
-import 'package:campus_bazar/features/auth/domain/entities/user.dart';
-import 'package:campus_bazar/features/auth/domain/repositories/auth_repository.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:dartz/dartz.dart';
+import '../datasources/remote/auth_remote_datasource.dart';
+import '../models/auth_response_model.dart';
+import '../../domain/entities/auth_entity.dart';
+import '../../domain/repositories/auth_repository.dart';
 
-class AuthRepositoryImpl implements AuthRepository {
-  final AuthLocalDatasource localDatasource;
+final authRepositoryProvider = Provider<IAuthRepository>((ref) {
+  final remoteDatasource = ref.read(authRemoteDatasourceProvider);
+  return AuthRepositoryImpl(remoteDatasource: remoteDatasource);
+});
 
-  AuthRepositoryImpl({required this.localDatasource});
+class AuthRepositoryImpl implements IAuthRepository {
+  final AuthRemoteDatasource _remoteDatasource;
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
-  @override
-  Future<Either<Failure, User>> login(String email, String password) async {
-    try {
-      final user = await localDatasource.validateLogin(email, password);
-
-      if (user == null) {
-        final isRegistered = await localDatasource.isEmailRegistered(email);
-        if (!isRegistered) {
-          return Left(AuthFailure('Email not registered. Please sign up first.'));
-        }
-        return Left(AuthFailure('Invalid password. Please try again.'));
-      }
-
-      await localDatasource.cacheUser(user);
-      return Right(user.toEntity());
-    } catch (e) {
-      return Left(AuthFailure('Login failed: ${e.toString()}'));
-    }
-  }
+  AuthRepositoryImpl({required AuthRemoteDatasource remoteDatasource})
+      : _remoteDatasource = remoteDatasource;
 
   @override
-  Future<Either<Failure, User>> signup(String email, String password, {String? name}) async {
+  Future<Either<Failure, AuthEntity>> register({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
     try {
-      final isRegistered = await localDatasource.isEmailRegistered(email);
-      if (isRegistered) {
-        return Left(AuthFailure('Email already registered. Please login instead.'));
-      }
+      // normalize email
+      final cleanedEmail = email.trim().toLowerCase();
 
-      await localDatasource.registerUser(email, password, name);
-
-      final user = UserModel(
-        userId: email.hashCode.toString(),
-        fullName: name ?? '',
-        email: email.toLowerCase().trim(),
+      // send plain password to backend (backend hashes it)
+      final AuthResponseModel response = await _remoteDatasource.register(
+        name: name,
+        email: cleanedEmail,
         password: password,
       );
 
-      return Right(user.toEntity());
+      // store token securely
+      await _secureStorage.write(key: 'token', value: response.token);
+
+      return Right(AuthEntity(
+     userId: response.userId,
+     name: response.name,
+     email: response.email,
+     token: response.token,
+
+      ));
     } catch (e) {
-      return Left(AuthFailure('Signup failed: ${e.toString()}'));
+      return Left(AuthFailure(message: e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, User?>> getCachedUser() async {
+  Future<Either<Failure, AuthEntity>> login({
+    required String email,
+    required String password,
+  }) async {
     try {
-      final user = await localDatasource.getCachedUser();
-      return Right(user?.toEntity());
+      // normalize email
+      final cleanedEmail = email.trim().toLowerCase();
+
+      // send plain password to backend
+      final AuthResponseModel response = await _remoteDatasource.login(
+        email: cleanedEmail,
+        password: password,
+      );
+
+      // store token securely
+      await _secureStorage.write(key: 'token', value: response.token);
+
+      return Right(AuthEntity(
+       userId: response.userId,
+       name: response.name,
+       email: response.email,
+       token: response.token,
+
+      ));
     } catch (e) {
-      return Left(CacheFailure('Failed to get cached user: ${e.toString()}'));
+      return Left(AuthFailure(message: e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, void>> logout() async {
+  Future<Either<Failure, bool>> logout() async {
     try {
-      await localDatasource.clearUser();
-      return const Right(null);
+      final result = await _remoteDatasource.logout();
+      // remove token from storage on logout
+      await _secureStorage.delete(key: 'token');
+      return Right(result);
     } catch (e) {
-      return Left(CacheFailure('Logout failed: ${e.toString()}'));
+      return Left(AuthFailure(message: e.toString()));
     }
   }
 }
