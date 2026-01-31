@@ -19,7 +19,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
   final _fullNameController = TextEditingController(); //name controller
   final _emailController = TextEditingController(); //email controller
   final _passwordController = TextEditingController(); //password
-  final _confirmPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();//confirm password
 
   final _formKey = GlobalKey<FormState>();
 
