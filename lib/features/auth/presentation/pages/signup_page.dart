@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../presentation/state/auth_state.dart';
 import '../../presentation/view_model/auth_viewmodel.dart';
 
+//Signup Page
 class SignupPage extends ConsumerStatefulWidget {
   const SignupPage({super.key});
 
@@ -14,6 +15,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
   bool passwordVisible = false;
   bool confirmPasswordVisible = false;
 
+//controller
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();

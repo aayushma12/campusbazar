@@ -23,7 +23,7 @@ class AuthRemoteDatasource implements IAuthDataSource {
     required String password,
   }) async {
     final request = AuthRequestModel(name: name, email: email, password: password);
-
+//try
     try {
       final response = await _apiClient.post(ApiEndpoints.register, data: request.toJson());
       return AuthUserModel.fromJson(response.data);
