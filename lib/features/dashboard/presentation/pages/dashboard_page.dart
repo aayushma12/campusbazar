@@ -1,13 +1,10 @@
-import 'package:campus_bazar/features/auth/data/models/user_model.dart';
 import 'package:campus_bazar/features/profile/presentation/pages/profile_page.dart';
 import 'package:campus_bazar/features/tutor/presentation/pages/tutor_page.dart';
 import 'package:campus_bazar/features/wishlist/presentation/pages/wishlist_page.dart';
 import 'package:flutter/material.dart';
 
 class DashboardPage extends StatefulWidget {
-  // Pass the user model here to display personalized data in the Profile tab
-  final UserModel? user;
-  const DashboardPage({super.key, this.user});
+  const DashboardPage({super.key});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -24,7 +21,7 @@ class _DashboardPageState extends State<DashboardPage> {
       const TutorPage(),
       const Center(child: Text("Add Product Page")), // You can update this later
       const WishlistPage(),
-      ProfilePage(user: widget.user), // Passing the real user data
+      const ProfilePage(), // Using the new parameter-less ProfilePage
     ];
 
     final size = MediaQuery.of(context).size;

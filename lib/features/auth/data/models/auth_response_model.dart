@@ -17,7 +17,7 @@ class AuthResponseModel {
       userId: user['id']?.toString() ?? '', // convert id to string
       name: user['name'] ?? '',
       email: user['email'] ?? '',
-      token: json['token'] ?? '',
+      token: json['accessToken'] ?? json['token'] ?? '',
     );
   }
 }

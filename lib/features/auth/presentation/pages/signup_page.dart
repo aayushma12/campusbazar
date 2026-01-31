@@ -110,7 +110,9 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) return "Full name is required";
+                      if (value == null || value.isEmpty) {
+                        return "Full name is required";
+                      }
                       return null;
                     },
                   ),
@@ -128,8 +130,12 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) return "Email is required";
-                      if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) return "Enter a valid email";
+                      if (value == null || value.isEmpty) {
+                        return "Email is required";
+                      }
+                      if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                        return "Enter a valid email";
+                      }
                       return null;
                     },
                   ),
@@ -151,8 +157,12 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                       ),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) return "Password is required";
-                      if (value.length < 6) return "Password must be at least 6 characters";
+                      if (value == null || value.isEmpty) {
+                        return "Password is required";
+                      }
+                      if (value.length < 6) {
+                        return "Password must be at least 6 characters";
+                      }
                       return null;
                     },
                   ),
@@ -174,8 +184,12 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                       ),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) return "Confirm password is required";
-                      if (value != _passwordController.text) return "Passwords do not match";
+                      if (value == null || value.isEmpty) {
+                        return "Confirm password is required";
+                      }
+                      if (value != _passwordController.text) {
+                        return "Passwords do not match";
+                      }
                       return null;
                     },
                   ),
@@ -225,7 +239,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
   void _handleSignup() {
     if (_formKey.currentState!.validate()) {
       ref.read(authViewModelProvider.notifier).register(
-        name: _fullNameController.text.trim(), // ✅ Send full name
+        name: _fullNameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );

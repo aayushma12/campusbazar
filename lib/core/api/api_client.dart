@@ -1,135 +1,66 @@
 import 'package:dio/dio.dart';
+import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:pretty_dio_logger/pretty_dio_logger.dart';
-
-import 'api_endpoints.dart';
+import 'package:get_it/get_it.dart';
+import '../api/api_endpoints.dart';
+import '../../features/auth/data/datasources/auth_local_data_source.dart';
 
 final apiClientProvider = Provider<ApiClient>((ref) {
-  return ApiClient();
+  return GetIt.instance<ApiClient>();
 });
 
 class ApiClient {
-  late final Dio _dio;
+  final Dio _dio;
+  final AuthLocalDataSource authLocalDataSource;
 
-  ApiClient() {
-    _dio = Dio(
-      BaseOptions(
-        baseUrl: ApiEndpoints.baseUrl,
-        connectTimeout: ApiEndpoints.connectionTimeout,
-        receiveTimeout: ApiEndpoints.receiveTimeout,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      ),
-    );
+  ApiClient({required Dio dio, required this.authLocalDataSource}) : _dio = dio {
+    _dio.options.baseUrl = ApiEndpoints.baseUrl;
+    _dio.options.connectTimeout = ApiEndpoints.connectionTimeout;
+    _dio.options.receiveTimeout = ApiEndpoints.receiveTimeout;
+    
+    _dio.options.headers = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+    
+    // Auth Interceptor
+    _dio.interceptors.add(InterceptorsWrapper(
+      onRequest: (options, handler) async {
+        final token = await authLocalDataSource.getToken();
+        if (token != null) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
+        return handler.next(options);
+      },
+    ));
 
-    // Add Auth Interceptor for adding token to requests
-    _dio.interceptors.add(_AuthInterceptor());
-
-    // Logger for debugging (only in debug mode)
+    // Logger Interceptor
     if (kDebugMode) {
-      _dio.interceptors.add(
-        PrettyDioLogger(
-          requestHeader: true,
-          requestBody: true,
-          responseBody: true,
-          responseHeader: false,
-          error: true,
-          compact: true,
-        ),
-      );
+      _dio.interceptors.add(PrettyDioLogger(
+        requestHeader: true,
+        requestBody: true,
+        responseBody: true,
+        error: true,
+        compact: true,
+      ));
     }
   }
 
   Dio get dio => _dio;
 
-  // GET request
-  Future<Response> get(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-  }) async {
-    return _dio.get(path, queryParameters: queryParameters, options: options);
-  }
+  Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) =>
+      _dio.get(path, queryParameters: queryParameters);
 
-  // POST request
-  Future<Response> post(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-  }) async {
-    return _dio.post(
-      path,
-      data: data,
-      queryParameters: queryParameters,
-      options: options,
-    );
-  }
+  Future<Response> post(String path, {dynamic data, Map<String, dynamic>? queryParameters}) =>
+      _dio.post(path, data: data, queryParameters: queryParameters);
 
-  // PUT request
-  Future<Response> put(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-  }) async {
-    return _dio.put(
-      path,
-      data: data,
-      queryParameters: queryParameters,
-      options: options,
-    );
-  }
+  Future<Response> put(String path, {dynamic data, Map<String, dynamic>? queryParameters}) =>
+      _dio.put(path, data: data, queryParameters: queryParameters);
 
-  // DELETE request
-  Future<Response> delete(
-    String path, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-  }) async {
-    return _dio.delete(
-      path,
-      data: data,
-      queryParameters: queryParameters,
-      options: options,
-    );
-  }
-}
+  Future<Response> patch(String path, {dynamic data, Map<String, dynamic>? queryParameters}) =>
+      _dio.patch(path, data: data, queryParameters: queryParameters);
 
-// Auth Interceptor - Adds token to requests
-class _AuthInterceptor extends Interceptor {
-  final _storage = const FlutterSecureStorage();
-
-  @override
-  void onRequest(
-    RequestOptions options,
-    RequestInterceptorHandler handler,
-  ) async {
-    // Skip adding token for auth endpoints
-    if (options.path.contains('/auth/')) {
-      return handler.next(options);
-    }
-
-    // Get token from secure storage
-    final token = await _storage.read(key: 'access_token');
-    if (token != null) {
-      options.headers['Authorization'] = 'Bearer $token';
-    }
-
-    return handler.next(options);
-  }
-
-  @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
-    // Handle 401 Unauthorized - Token expired
-    if (err.response?.statusCode == 401) {
-      // TODO: Implement token refresh or logout
-    }
-    return handler.next(err);
-  }
+  Future<Response> delete(String path, {dynamic data, Map<String, dynamic>? queryParameters}) =>
+      _dio.delete(path, data: data, queryParameters: queryParameters);
 }

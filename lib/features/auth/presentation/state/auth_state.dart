@@ -1,4 +1,4 @@
-import '../../domain/entities/auth_entity.dart';
+import '../../domain/entities/auth_user.dart';
 
 enum AuthStatus {
   initial,
@@ -13,7 +13,7 @@ class AuthState {
   final AuthStatus status;
   final bool isLoading;
   final String? errorMessage;
-  final AuthEntity? user;
+  final AuthUser? user;
 
   const AuthState({
     this.status = AuthStatus.initial,
@@ -26,7 +26,7 @@ class AuthState {
     AuthStatus? status,
     bool? isLoading,
     String? errorMessage,
-    AuthEntity? user,
+    AuthUser? user,
   }) {
     return AuthState(
       status: status ?? this.status,

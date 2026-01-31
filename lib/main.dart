@@ -1,11 +1,15 @@
 
-import 'package:campus_bazar/features/auth/presentation/pages/SignupPage.dart';
+import 'package:campus_bazar/features/auth/presentation/pages/signup_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart'; // 1. Add this import
 
-// Import your Model and the Dashboard
-import 'features/auth/data/models/user_model.dart';
+// Import your Models
+import 'features/auth/data/models/auth_user_model.dart';
+import 'features/profile/data/models/profile_model.dart';
+
+// Import service locator
+import 'core/services/service_locator.dart';
 
 
 // Import your other refactored pages
@@ -27,12 +31,13 @@ void main() async {
   // 4. Initialize Hive
   await Hive.initFlutter();
 
-  // 5. Register the Adapter (This allows Hive to understand your UserModel)
-  Hive.registerAdapter(UserModelAdapter());
+  // 5. Register the Adapters
+  Hive.registerAdapter(AuthUserModelAdapter());
+  Hive.registerAdapter(ProfileModelAdapter());
 
-  // 6. Open the User Box (Think of this as opening a specific database table)
-  await Hive.openBox<UserModel>('user_box');
-
+  // 6. Setup Dependency Injection (GetIt)
+  await setupLocator();
+  
   runApp(const CampusBazarApp());
 }
 

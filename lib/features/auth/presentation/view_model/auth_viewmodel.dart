@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../data/repositories/auth_repository_impl.dart';
+import '../../../../core/services/service_locator.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/register_usecase.dart';
 import '../state/auth_state.dart';
@@ -9,15 +9,14 @@ final authViewModelProvider = NotifierProvider<AuthViewModel, AuthState>(
 );
 
 class AuthViewModel extends Notifier<AuthState> {
-  late final LoginUsecase _loginUsecase;
-  late final RegisterUsecase _registerUsecase;
+  late final LoginUseCase _loginUseCase;
+  late final RegisterUseCase _registerUseCase;
 
   @override
   AuthState build() {
-    final repository = ref.read(authRepositoryProvider);
-
-    _loginUsecase = LoginUsecase(repository: repository);
-    _registerUsecase = RegisterUsecase(repository: repository);
+    // Inject UseCases via Service Locator (GetIt)
+    _loginUseCase = sl<LoginUseCase>();
+    _registerUseCase = sl<RegisterUseCase>();
 
     return const AuthState();
   }
@@ -25,12 +24,12 @@ class AuthViewModel extends Notifier<AuthState> {
   Future<void> login({required String email, required String password}) async {
     state = state.copyWith(status: AuthStatus.loading, isLoading: true);
 
-    final result = await _loginUsecase(LoginParams(email: email, password: password));
+    final result = await _loginUseCase(LoginParams(email: email, password: password));
 
     result.fold(
       (failure) => state = state.copyWith(
         status: AuthStatus.error,
-        errorMessage: failure.message ?? 'Something went wrong',
+        errorMessage: failure.message,
         isLoading: false,
       ),
       (user) => state = state.copyWith(
@@ -48,14 +47,14 @@ class AuthViewModel extends Notifier<AuthState> {
   }) async {
     state = state.copyWith(status: AuthStatus.loading, isLoading: true);
 
-    final result = await _registerUsecase(
+    final result = await _registerUseCase(
       RegisterParams(name: name, email: email, password: password),
     );
 
     result.fold(
       (failure) => state = state.copyWith(
         status: AuthStatus.error,
-        errorMessage: failure.message ?? 'Something went wrong',
+        errorMessage: failure.message,
         isLoading: false,
       ),
       (user) => state = state.copyWith(
