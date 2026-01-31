@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
-import '../../data/datasources/local/auth_local_data_source.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../presentation/state/auth_state.dart';
+import '../../presentation/view_model/auth_viewmodel.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   bool rememberMe = false;
   bool passwordVisible = false;
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
-  final _localDataSource = AuthLocalDatasourceImpl();
 
   final _formKey = GlobalKey<FormState>();
 
@@ -30,6 +30,26 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     final bool isTablet = size.width > 600;
+    final authState = ref.watch(authViewModelProvider);
+
+    ref.listen<AuthState>(authViewModelProvider, (previous, next) {
+      if (next.status == AuthStatus.authenticated) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Welcome back, ${next.user?.name ?? 'User'}!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pushReplacementNamed(context, '/dashboard');
+      } else if (next.status == AuthStatus.error && next.errorMessage != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -54,7 +74,6 @@ class _LoginPageState extends State<LoginPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 40), // Move everything higher
-
                   // LOGO + TITLE + SUBTITLE
                   Center(
                     child: Column(
@@ -86,42 +105,71 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 30),
 
                   // EMAIL FIELD
-                  const Text("Email", style: TextStyle(fontWeight: FontWeight.w500)),
+                  const Text(
+                    "Email",
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       hintText: "Enter your email",
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 14,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) return "Email is required";
-                      if (!value.contains("@")) return "Enter a valid email";
+                      if (value == null || value.isEmpty) {
+                        return "Email is required";
+                      }
+                      if (!value.contains("@")) {
+                        return "Enter a valid email";
+                      }
                       return null;
                     },
                   ),
                   const SizedBox(height: 20),
 
                   // PASSWORD FIELD
-                  const Text("Password", style: TextStyle(fontWeight: FontWeight.w500)),
+                  const Text(
+                    "Password",
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _passwordController,
                     obscureText: !passwordVisible,
                     decoration: InputDecoration(
                       hintText: "Enter your password",
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 14,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                       suffixIcon: IconButton(
-                        icon: Icon(passwordVisible ? Icons.visibility : Icons.visibility_off),
-                        onPressed: () => setState(() => passwordVisible = !passwordVisible),
+                        icon: Icon(
+                          passwordVisible
+                              ? Icons.visibility
+                              : Icons.visibility_off,
+                        ),
+                        onPressed: () =>
+                            setState(() => passwordVisible = !passwordVisible),
                       ),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) return "Password is required";
-                      if (value.length < 6) return "Password must be at least 6 characters";
+                      if (value == null || value.isEmpty) {
+                        return "Password is required";
+                      }
+                      if (value.length < 6) {
+                        return "Password must be at least 6 characters";
+                      }
                       return null;
                     },
                   ),
@@ -133,13 +181,18 @@ class _LoginPageState extends State<LoginPage> {
                       Checkbox(
                         value: rememberMe,
                         activeColor: Colors.green,
-                        onChanged: (value) => setState(() => rememberMe = value!),
+                        onChanged: (value) =>
+                            setState(() => rememberMe = value!),
                       ),
                       const Text("Remember Me"),
                       const Spacer(),
                       TextButton(
-                        onPressed: () => Navigator.pushNamed(context, "/forgot"),
-                        child: const Text("Forgot Password", style: TextStyle(color: Colors.green)),
+                        onPressed: () =>
+                            Navigator.pushNamed(context, "/forgot"),
+                        child: const Text(
+                          "Forgot Password",
+                          style: TextStyle(color: Colors.green),
+                        ),
                       ),
                     ],
                   ),
@@ -151,35 +204,22 @@ class _LoginPageState extends State<LoginPage> {
                     width: double.infinity,
                     height: isTablet ? 56 : 48,
                     child: ElevatedButton(
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          final messenger = ScaffoldMessenger.of(context);
-                          final navigator = Navigator.of(context);
-
-                          final user = await _localDataSource.validateLogin(
-                            _emailController.text.trim(),
-                            _passwordController.text,
-                          );
-
-                          if (!mounted) return;
-
-                          if (user != null) {
-                            messenger.showSnackBar(
-                              SnackBar(content: Text("Welcome back, ${user.fullName}!")),
-                            );
-                            navigator.pushReplacementNamed("/dashboard");
-                          } else {
-                            messenger.showSnackBar(
-                              const SnackBar(content: Text("Invalid email or password")),
-                            );
-                          }
-                        }
-                      },
+                      onPressed: authState.isLoading ? null : _handleLogin,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                      child: const Text("Login", style: TextStyle(fontSize: 18, color: Colors.white)),
+                      child: authState.isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
+                              "Login",
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                              ),
+                            ),
                     ),
                   ),
 
@@ -191,12 +231,16 @@ class _LoginPageState extends State<LoginPage> {
                     children: [
                       const Text("Don't have an account? "),
                       GestureDetector(
-                        onTap: () => Navigator.pushReplacementNamed(context, "/signup"),
+                        onTap: () =>
+                            Navigator.pushReplacementNamed(context, "/signup"),
                         child: const Text(
                           "Sign Up",
-                          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      )
+                      ),
                     ],
                   ),
 
@@ -208,5 +252,16 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+  }
+
+  void _handleLogin() {
+    if (_formKey.currentState!.validate()) {
+      ref
+          .read(authViewModelProvider.notifier)
+          .login(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
+    }
   }
 }

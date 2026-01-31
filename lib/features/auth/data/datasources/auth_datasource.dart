@@ -1,13 +1,13 @@
-import '../models/auth_response_model.dart';
+import '../models/auth_user_model.dart';
 
 abstract class IAuthDataSource {
-  Future<AuthResponseModel> register({
+  Future<AuthUserModel> register({
     required String name,
     required String email,
     required String password,
   });
 
-  Future<AuthResponseModel> login({
+  Future<AuthUserModel> login({
     required String email,
     required String password,
   });

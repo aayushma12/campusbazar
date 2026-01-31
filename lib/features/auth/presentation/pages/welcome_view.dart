@@ -13,7 +13,7 @@ class WelcomeView extends StatelessWidget {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Center( // Wrap in Center for Tablet alignment
-          child: Container(
+          child: SizedBox(
             // Constraint width on tablet so buttons aren't too wide
             width: isTablet ? 400 : double.infinity, 
             child: Column(
@@ -76,7 +76,7 @@ class WelcomeView extends StatelessWidget {
                             Navigator.pushNamed(context, '/signup');
                           },
                           child: const Text(
-                            "Sign Up",
+                             "Sign Up",
                             style: TextStyle(fontSize: 18, color: Colors.green),
                           ),
                         ),
