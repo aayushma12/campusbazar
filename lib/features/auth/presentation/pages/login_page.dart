@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../presentation/state/auth_state.dart';
 import '../../presentation/view_model/auth_viewmodel.dart';
 
+//login page
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
@@ -253,14 +254,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       ),
     );
   }
-
+//login handle
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
       ref
           .read(authViewModelProvider.notifier)
           .login(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
+            email: _emailController.text.trim(), //email
+            password: _passwordController.text, //password
           );
     }
   }
