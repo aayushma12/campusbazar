@@ -16,7 +16,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
   bool confirmPasswordVisible = false;
 
 //controller
-  final _fullNameController = TextEditingController();
+  final _fullNameController = TextEditingController(); //name controller
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
