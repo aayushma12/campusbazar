@@ -4,6 +4,7 @@ import '../models/auth_user_model.dart';
 abstract class AuthLocalDataSource {
   Future<void> cacheUser(AuthUserModel user);
   Future<String?> getToken();
+  Future<void> clearCache();
 }
 
 class AuthLocalDataSourceImpl implements AuthLocalDataSource {
@@ -20,5 +21,11 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
   @override
   Future<String?> getToken() async {
     return box.get('CACHED_TOKEN');
+  }
+
+  @override
+  Future<void> clearCache() async {
+    await box.delete('CACHED_USER');
+    await box.delete('CACHED_TOKEN');
   }
 }

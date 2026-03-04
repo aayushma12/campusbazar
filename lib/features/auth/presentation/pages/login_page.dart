@@ -60,7 +60,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            if (Navigator.canPop(context)) Navigator.pop(context);
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushNamedAndRemoveUntil(context, '/welcome', (route) => false);
+            }
           },
         ),
       ),

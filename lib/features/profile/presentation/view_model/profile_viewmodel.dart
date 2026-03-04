@@ -22,18 +22,25 @@ class ProfileViewModel extends Notifier<ProfileState> {
   }
 
   Future<void> getProfile() async {
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(
+      status: ProfileStatus.loading,
+      clearError: true,
+      clearSuccess: true,
+    );
 
     final result = await _getProfileUseCase(NoParams());
 
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
+        status: ProfileStatus.error,
         errorMessage: failure.message,
+        clearSuccess: true,
       ),
       (profile) => state = state.copyWith(
-        isLoading: false,
+        status: ProfileStatus.loaded,
         profile: profile,
+        clearError: true,
+        clearSuccess: true,
       ),
     );
   }
@@ -44,16 +51,34 @@ class ProfileViewModel extends Notifier<ProfileState> {
     String? studentId,
     String? batch,
     String? collegeId,
+    String? university,
+    String? campus,
+    String? bio,
     File? imageFile,
   }) async {
-    state = state.copyWith(isLoading: true);
+    state = state.copyWith(
+      status: ProfileStatus.updating,
+      clearError: true,
+      clearSuccess: true,
+    );
 
     final Map<String, dynamic> body = {};
-    if (name != null) body['name'] = name;
-    if (phoneNumber != null) body['phoneNumber'] = phoneNumber;
-    if (studentId != null) body['studentId'] = studentId;
-    if (batch != null) body['batch'] = batch;
-    if (collegeId != null) body['collegeId'] = collegeId;
+    if (name != null && name.trim().isNotEmpty) body['name'] = name.trim();
+    if (phoneNumber != null && phoneNumber.trim().isNotEmpty) body['phoneNumber'] = phoneNumber.trim();
+    if (studentId != null && studentId.trim().isNotEmpty) body['studentId'] = studentId.trim();
+    if (batch != null && batch.trim().isNotEmpty) body['batch'] = batch.trim();
+    if (collegeId != null && collegeId.trim().isNotEmpty) body['collegeId'] = collegeId.trim();
+    if (university != null && university.trim().isNotEmpty) body['university'] = university.trim();
+    if (campus != null && campus.trim().isNotEmpty) body['campus'] = campus.trim();
+    if (bio != null && bio.trim().isNotEmpty) body['bio'] = bio.trim();
+
+    if (body.isEmpty && imageFile == null) {
+      state = state.copyWith(
+        status: ProfileStatus.error,
+        errorMessage: 'No changes to update',
+      );
+      return;
+    }
 
     final result = await _updateProfileUseCase(
       UpdateProfileParams(body: body, imageFile: imageFile),
@@ -61,18 +86,24 @@ class ProfileViewModel extends Notifier<ProfileState> {
 
     result.fold(
       (failure) => state = state.copyWith(
-        isLoading: false,
+        status: ProfileStatus.error,
         errorMessage: failure.message,
+        clearSuccess: true,
       ),
       (profile) => state = state.copyWith(
-        isLoading: false,
+        status: ProfileStatus.success,
         profile: profile,
         successMessage: 'Profile updated successfully',
+        clearError: true,
       ),
     );
   }
 
   void clearMessages() {
-    state = state.copyWith(errorMessage: null, successMessage: null);
+    state = state.copyWith(
+      clearError: true,
+      clearSuccess: true,
+      status: state.profile == null ? ProfileStatus.initial : ProfileStatus.loaded,
+    );
   }
 }

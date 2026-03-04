@@ -14,6 +14,7 @@ class AuthUserModel extends AuthUser {
   @override
   @HiveField(2)
   final String name;
+  @override
   @HiveField(3)
   final String token; // Store token here for easy caching
 
@@ -22,12 +23,12 @@ class AuthUserModel extends AuthUser {
     required this.email,
     required this.name,
     required this.token,
-  }) : super(id: id, email: email, name: name);
+  }) : super(id: id, email: email, name: name,token: token);
 
   factory AuthUserModel.fromJson(Map<String, dynamic> json) {
     final user = json['user'] ?? {};
     return AuthUserModel(
-      id: user['id']?.toString() ?? '',
+      id: user['_id']?.toString() ?? user['id']?.toString() ?? '',
       email: user['email'] ?? '',
       name: user['name'] ?? '',
       token: json['accessToken'] ?? json['token'] ?? '',

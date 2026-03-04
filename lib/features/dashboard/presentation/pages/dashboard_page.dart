@@ -1,27 +1,40 @@
 import 'package:campus_bazar/features/profile/presentation/pages/profile_page.dart';
+import 'package:campus_bazar/features/products/presentation/pages/products_dashboard_page.dart';
+import 'package:campus_bazar/features/product/presentation/pages/search_products_page.dart';
 import 'package:campus_bazar/features/tutor/presentation/pages/tutor_page.dart';
-import 'package:campus_bazar/features/wishlist/presentation/pages/wishlist_page.dart';
+import 'package:campus_bazar/features/cart/presentation/pages/cart_page.dart';
+import 'package:campus_bazar/features/cart/presentation/providers/cart_providers.dart';
+import 'package:campus_bazar/features/chat/presentation/pages/conversations_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class DashboardPage extends StatefulWidget {
+class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
 
   @override
-  State<DashboardPage> createState() => _DashboardPageState();
+  ConsumerState<DashboardPage> createState() => _DashboardPageState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
+class _DashboardPageState extends ConsumerState<DashboardPage> {
   int _currentIndex = 0;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(cartNotifierProvider.notifier).loadCart();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // List of actual pages instead of placeholders
-    final List<Widget> pages = [
-      const Center(child: Text("Home Page Content")), // You can update this later
-      const TutorPage(),
-      const Center(child: Text("Add Product Page")), // You can update this later
-      const WishlistPage(),
-      const ProfilePage(), // Using the new parameter-less ProfilePage
+    final List<Widget Function()> pageBuilders = [
+      () => const ProductsDashboardPage(),
+      () => const SearchProductsPage(),
+      () => const TutorPage(),
+      () => const CartPage(),
+      () => const ConversationsPage(),
+      () => const ProfilePage(),
     ];
 
     final size = MediaQuery.of(context).size;
@@ -39,19 +52,17 @@ class _DashboardPageState extends State<DashboardPage> {
               labelType: NavigationRailLabelType.all,
               selectedIconTheme: const IconThemeData(color: Colors.green),
               unselectedIconTheme: const IconThemeData(color: Colors.grey),
-              destinations: const [
+              destinations: [
                 NavigationRailDestination(icon: Icon(Icons.home), label: Text('Home')),
-                NavigationRailDestination(icon: Icon(Icons.school), label: Text('Tutor')),
-                NavigationRailDestination(icon: Icon(Icons.add_circle), label: Text('Add')),
-                NavigationRailDestination(icon: Icon(Icons.favorite_border), label: Text('Wishlist')),
+                NavigationRailDestination(icon: Icon(Icons.search), label: Text('Search')),
+                NavigationRailDestination(icon: Icon(Icons.school_outlined), label: Text('Tutor')),
+                NavigationRailDestination(icon: _cartIconWithBadge(), label: Text('Cart')),
+                NavigationRailDestination(icon: Icon(Icons.chat_bubble_outline), label: Text('Chat')),
                 NavigationRailDestination(icon: Icon(Icons.person_outline), label: Text('Profile')),
               ],
             ),
           Expanded(
-            child: IndexedStack(
-              index: _currentIndex,
-              children: pages,
-            ),
+            child: pageBuilders[_currentIndex](),
           ),
         ],
       ),
@@ -65,14 +76,24 @@ class _DashboardPageState extends State<DashboardPage> {
               type: BottomNavigationBarType.fixed,
               selectedItemColor: Colors.green,
               unselectedItemColor: Colors.grey,
-              items: const [
+              items: [
                 BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-                BottomNavigationBarItem(icon: Icon(Icons.school), label: 'Tutor'),
-                BottomNavigationBarItem(icon: Icon(Icons.add_circle, size: 30), label: 'Add'),
-                BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: 'Wishlist'),
+                BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
+                BottomNavigationBarItem(icon: Icon(Icons.school_outlined), label: 'Tutor'),
+                BottomNavigationBarItem(icon: _cartIconWithBadge(), label: 'Cart'),
+                BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Chat'),
                 BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
               ],
             ),
+    );
+  }
+
+  Widget _cartIconWithBadge() {
+    final cartCount = ref.watch(cartNotifierProvider).summary.totalQuantity;
+    return Badge.count(
+      isLabelVisible: cartCount > 0,
+      count: cartCount,
+      child: const Icon(Icons.shopping_cart),
     );
   }
 }

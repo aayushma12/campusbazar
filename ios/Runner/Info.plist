@@ -51,5 +51,11 @@
 		<string>_http._tcp</string>
 		<string>_https._tcp</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access is needed so you can take a profile picture.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Photo library access is needed so you can choose a profile picture.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Photo library access is needed for profile picture updates.</string>
 </dict>
 </plist>

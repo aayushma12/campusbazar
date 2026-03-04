@@ -1,5 +1,8 @@
 import 'package:equatable/equatable.dart';
 
+/// Domain entity for user profile.
+///
+/// This class is UI-agnostic and represents profile data used by use cases.
 class Profile extends Equatable {
   final String id;
   final String name;
@@ -9,6 +12,9 @@ class Profile extends Equatable {
   final String? studentId;
   final String? batch;
   final String? collegeId;
+  final String? university;
+  final String? campus;
+  final String? bio;
 
   const Profile({
     required this.id,
@@ -19,8 +25,23 @@ class Profile extends Equatable {
     this.studentId,
     this.batch,
     this.collegeId,
+    this.university,
+    this.campus,
+    this.bio,
   });
 
   @override
-  List<Object?> get props => [id, name, email, profilePicture, phoneNumber, studentId, batch, collegeId];
+  List<Object?> get props => [
+        id,
+        name,
+        email,
+        profilePicture,
+        phoneNumber,
+        studentId,
+        batch,
+        collegeId,
+        university,
+        campus,
+        bio,
+      ];
 }

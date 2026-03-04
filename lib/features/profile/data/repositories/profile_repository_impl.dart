@@ -23,35 +23,44 @@ class ProfileRepositoryImpl implements ProfileRepository {
     if (await networkInfo.isConnected) {
       try {
         final remoteProfile = await remoteDataSource.getProfile();
-        localDataSource.cacheProfile(remoteProfile);
+        await localDataSource.cacheProfile(remoteProfile);
         return Right(remoteProfile);
       } catch (e) {
-        final message = e.toString().replaceAll('Exception: ', '');
-        return Left(ServerFailure(message));
+        // Fallback to cache when remote fails.
+        try {
+          final localProfile = await localDataSource.getLastProfile();
+          return Right(localProfile);
+        } catch (_) {
+          final message = e.toString().replaceAll('Exception: ', '').trim();
+          return Left(ServerFailure(message.isEmpty ? 'Failed to load profile' : message));
+        }
       }
     } else {
       try {
         final localProfile = await localDataSource.getLastProfile();
         return Right(localProfile);
       } catch (e) {
-        return Left(CacheFailure());
+        return const Left(CacheFailure('No cached profile found'));
       }
     }
   }
 
   @override
-  Future<Either<Failure, Profile>> updateProfile(Map<String, dynamic> body, File? imageFile) async {
+  Future<Either<Failure, Profile>> updateProfile({
+    required Map<String, dynamic> body,
+    File? imageFile,
+  }) async {
     if (await networkInfo.isConnected) {
       try {
         final remoteProfile = await remoteDataSource.updateProfile(body, imageFile);
-        localDataSource.cacheProfile(remoteProfile);
+        await localDataSource.cacheProfile(remoteProfile);
         return Right(remoteProfile);
       } catch (e) {
-        final message = e.toString().replaceAll('Exception: ', '');
-        return Left(ServerFailure(message));
+        final message = e.toString().replaceAll('Exception: ', '').trim();
+        return Left(ServerFailure(message.isEmpty ? 'Failed to update profile' : message));
       }
     } else {
-      return Left(const ServerFailure('No Internet Connection'));
+      return const Left(ServerFailure('No internet connection. Please try again.'));
     }
   }
 }

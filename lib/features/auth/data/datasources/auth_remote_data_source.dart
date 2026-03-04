@@ -21,8 +21,16 @@ class AuthRemoteDatasource implements IAuthDataSource {
     required String name,
     required String email,
     required String password,
+    String? university,
+    String? campus,
   }) async {
-    final request = AuthRequestModel(name: name, email: email, password: password);
+    final request = AuthRequestModel(
+      name: name,
+      email: email,
+      password: password,
+      university: university,
+      campus: campus,
+    );
 //try
     try {
       final response = await _apiClient.post(ApiEndpoints.register, data: request.toJson());
@@ -50,6 +58,26 @@ class AuthRemoteDatasource implements IAuthDataSource {
       throw Exception(message);
     } catch (e) {
       throw Exception('An unexpected error occurred: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<void> forgotPassword({required String email}) async {
+    try {
+      await _apiClient.post(ApiEndpoints.forgotPassword, data: {'email': email});
+    } on DioException catch (e) {
+      final message = e.response?.data?['message'] ?? e.message ?? 'Failed to request password reset';
+      throw Exception(message);
+    }
+  }
+
+  @override
+  Future<void> resetPassword({required String token, required String password}) async {
+    try {
+      await _apiClient.post('${ApiEndpoints.resetPassword}/$token', data: {'password': password});
+    } on DioException catch (e) {
+      final message = e.response?.data?['message'] ?? e.message ?? 'Failed to reset password';
+      throw Exception(message);
     }
   }
 
