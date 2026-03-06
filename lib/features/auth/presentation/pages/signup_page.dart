@@ -18,6 +18,8 @@ class _SignupPageState extends ConsumerState<SignupPage> {
 //controller
   final _fullNameController = TextEditingController(); //name controller
   final _emailController = TextEditingController(); //email controller
+  final _universityController = TextEditingController();
+  final _campusController = TextEditingController();
   final _passwordController = TextEditingController(); //password
   final _confirmPasswordController = TextEditingController();//confirm password
 
@@ -27,6 +29,8 @@ class _SignupPageState extends ConsumerState<SignupPage> {
   void dispose() {
     _fullNameController.dispose();
     _emailController.dispose();
+    _universityController.dispose();
+    _campusController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -64,7 +68,13 @@ class _SignupPageState extends ConsumerState<SignupPage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              Navigator.pushNamedAndRemoveUntil(context, '/welcome', (route) => false);
+            }
+          },
         ),
       ),
       body: Center(
@@ -114,6 +124,42 @@ class _SignupPageState extends ConsumerState<SignupPage> {
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return "Full name is required";
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 15),
+
+                  const Text("University", style: TextStyle(fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _universityController,
+                    decoration: InputDecoration(
+                      hintText: "Enter your university",
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "University is required";
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 15),
+
+                  const Text("Campus", style: TextStyle(fontWeight: FontWeight.w500)),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _campusController,
+                    decoration: InputDecoration(
+                      hintText: "Enter your campus",
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Campus is required";
                       }
                       return null;
                     },
@@ -244,6 +290,8 @@ class _SignupPageState extends ConsumerState<SignupPage> {
         name: _fullNameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
+        university: _universityController.text.trim(),
+        campus: _campusController.text.trim(),
       );
     }
   }

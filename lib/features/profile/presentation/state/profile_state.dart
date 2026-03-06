@@ -1,29 +1,42 @@
 import '../../domain/entities/profile_entity.dart';
 
+enum ProfileStatus {
+  initial,
+  loading,
+  loaded,
+  updating,
+  success,
+  error,
+}
+
 class ProfileState {
-  final bool isLoading;
+  final ProfileStatus status;
   final Profile? profile;
   final String? errorMessage;
   final String? successMessage;
 
   const ProfileState({
-    this.isLoading = false,
+    this.status = ProfileStatus.initial,
     this.profile,
     this.errorMessage,
     this.successMessage,
   });
 
+  bool get isBusy => status == ProfileStatus.loading || status == ProfileStatus.updating;
+
   ProfileState copyWith({
-    bool? isLoading,
+    ProfileStatus? status,
     Profile? profile,
     String? errorMessage,
     String? successMessage,
+    bool clearError = false,
+    bool clearSuccess = false,
   }) {
     return ProfileState(
-      isLoading: isLoading ?? this.isLoading,
+      status: status ?? this.status,
       profile: profile ?? this.profile,
-      errorMessage: errorMessage,
-      successMessage: successMessage,
+      errorMessage: clearError ? null : errorMessage,
+      successMessage: clearSuccess ? null : successMessage,
     );
   }
 }

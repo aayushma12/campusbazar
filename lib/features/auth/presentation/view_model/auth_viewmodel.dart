@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/service_locator.dart';
+import '../../data/datasources/auth_remote_data_source.dart';
 import '../../domain/usecases/login_usecase.dart';
 import '../../domain/usecases/register_usecase.dart';
 import '../state/auth_state.dart';
@@ -11,12 +12,14 @@ final authViewModelProvider = NotifierProvider<AuthViewModel, AuthState>(
 class AuthViewModel extends Notifier<AuthState> {
   late final LoginUseCase _loginUseCase;
   late final RegisterUseCase _registerUseCase;
+  late final AuthRemoteDatasource _authRemoteDatasource;
 
-  @override
+  @override   
   AuthState build() {
     // Inject UseCases via Service Locator (GetIt)
     _loginUseCase = sl<LoginUseCase>();
     _registerUseCase = sl<RegisterUseCase>();
+    _authRemoteDatasource = sl<AuthRemoteDatasource>();
 
     return const AuthState();
   }
@@ -44,11 +47,19 @@ class AuthViewModel extends Notifier<AuthState> {
     required String name,
     required String email,
     required String password,
+    String? university,
+    String? campus,
   }) async {
     state = state.copyWith(status: AuthStatus.loading, isLoading: true);
 
     final result = await _registerUseCase(
-      RegisterParams(name: name, email: email, password: password),
+      RegisterParams(
+        name: name,
+        email: email,
+        password: password,
+        university: university,
+        campus: campus,
+      ),
     );
 
     result.fold(
@@ -71,5 +82,37 @@ class AuthViewModel extends Notifier<AuthState> {
 
   void clearError() {
     state = state.copyWith(errorMessage: null);
+  }
+
+  Future<bool> forgotPassword(String email) async {
+    state = state.copyWith(status: AuthStatus.loading, isLoading: true, errorMessage: null);
+    try {
+      await _authRemoteDatasource.forgotPassword(email: email);
+      state = state.copyWith(status: AuthStatus.initial, isLoading: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        isLoading: false,
+        errorMessage: e.toString().replaceAll('Exception: ', ''),
+      );
+      return false;
+    }
+  }
+
+  Future<bool> resetPassword({required String token, required String password}) async {
+    state = state.copyWith(status: AuthStatus.loading, isLoading: true, errorMessage: null);
+    try {
+      await _authRemoteDatasource.resetPassword(token: token, password: password);
+      state = state.copyWith(status: AuthStatus.initial, isLoading: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        status: AuthStatus.error,
+        isLoading: false,
+        errorMessage: e.toString().replaceAll('Exception: ', ''),
+      );
+      return false;
+    }
   }
 }

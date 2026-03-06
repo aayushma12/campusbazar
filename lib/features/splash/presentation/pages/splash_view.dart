@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../../core/services/service_locator.dart';
+import '../../../auth/data/datasources/auth_local_data_source.dart';
 
 class SplashView extends StatefulWidget {
   const SplashView({super.key});
@@ -14,9 +16,15 @@ class _SplashViewState extends State<SplashView> {
   @override
   void initState() {
     super.initState();
-    // Start the 5-second countdown
-    _timer = Timer(const Duration(milliseconds: 5000), () {
-      if (mounted) {
+    _timer = Timer(const Duration(milliseconds: 1800), () async {
+      if (!mounted) return;
+      final authLocal = sl<AuthLocalDataSource>();
+      final token = await authLocal.getToken();
+      if (!mounted) return;
+
+      if (token != null && token.isNotEmpty) {
+        Navigator.pushReplacementNamed(context, '/dashboard');
+      } else {
         Navigator.pushReplacementNamed(context, '/onboarding1');
       }
     });

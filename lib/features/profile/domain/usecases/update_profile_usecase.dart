@@ -5,6 +5,7 @@ import '../../../../core/usecases/usecase.dart';
 import '../entities/profile_entity.dart';
 import '../repositories/profile_repository.dart';
 
+/// Updates profile using backend PATCH /api/v1/users/me endpoint.
 class UpdateProfileUseCase implements UseCase<Profile, UpdateProfileParams> {
   final ProfileRepository repository;
 
@@ -12,7 +13,7 @@ class UpdateProfileUseCase implements UseCase<Profile, UpdateProfileParams> {
 
   @override
   Future<Either<Failure, Profile>> call(UpdateProfileParams params) async {
-    return await repository.updateProfile(params.body, params.imageFile);
+    return await repository.updateProfile(body: params.body, imageFile: params.imageFile);
   }
 }
 

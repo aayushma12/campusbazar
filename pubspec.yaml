@@ -39,15 +39,23 @@ dependencies:
   # Equatable for value equality
   equatable: ^2.0.5
   image_picker: ^1.2.1
+  permission_handler: ^11.3.1
+  image_cropper: ^8.1.0
+  flutter_image_compress: ^2.3.0
+  webview_flutter: ^4.7.0
+  socket_io_client: ^3.1.2
+  sensors_plus: ^6.1.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  test_cov_console: ^0.2.2
 
   # Code generation for Hive
   build_runner: ^2.3.3
   hive_generator: ^2.0.0
+  mocktail: ^1.0.4
 
 flutter:
   uses-material-design: true
