@@ -12,7 +12,7 @@ void main() {
   late MockLocalAuthentication localAuth;
   late MockFlutterSecureStorage secureStorage;
   late BiometricAuthService service;
-
+//setup and tests
   setUp(() {
     localAuth = MockLocalAuthentication();
     secureStorage = MockFlutterSecureStorage();
