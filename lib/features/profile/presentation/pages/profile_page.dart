@@ -35,6 +35,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Widget build(BuildContext context) {
     ref.listen<ProfileState>(profileViewModelProvider, (previous, next) {
       if (!mounted) return;
+      final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
+      if (!isCurrentRoute) return;
 
       if (next.errorMessage != null && next.errorMessage!.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(

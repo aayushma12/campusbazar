@@ -15,7 +15,7 @@ class WelcomeView extends StatelessWidget {
         child: Center( // Wrap in Center for Tablet alignment
           child: SizedBox(
             // Constraint width on tablet so buttons aren't too wide
-            width: isTablet ? 400 : double.infinity, 
+            width: isTablet ? 400 : double.infinity,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

@@ -13,7 +13,7 @@ Base URL comes from `core/api/api_endpoints.dart`.
 ### Get Profile
 
 - **Method:** `GET`
-- **Endpoint:** `/api/v1/users/me`
+- **Endpoint:** `/api/v1/profile`
 - **Auth:** `Authorization: Bearer <access_token>`
 
 **Response (example)**
@@ -37,7 +37,7 @@ Base URL comes from `core/api/api_endpoints.dart`.
 ### Update Profile
 
 - **Method:** `PATCH`
-- **Endpoint:** `/api/v1/users/me`
+- **Endpoint:** `/api/v1/profile`
 - **Auth:** `Authorization: Bearer <access_token>`
 - **Content-Type:** `multipart/form-data`
 

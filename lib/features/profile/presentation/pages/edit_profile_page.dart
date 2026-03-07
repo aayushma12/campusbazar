@@ -341,6 +341,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                         if (!_formKey.currentState!.validate()) return;
 
                         await ref.read(profileViewModelProvider.notifier).updateProfile(
+                          originalProfile: widget.initialProfile,
                               name: _nameController.text,
                               phoneNumber: _phoneController.text,
                               studentId: _studentIdController.text,
