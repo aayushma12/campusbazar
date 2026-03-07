@@ -70,6 +70,7 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
         elevation: 0,
         centerTitle: true,
         actions: [
+          _clearWishlistActionButton(state),
           _cartActionButton(cartCount),
           const SizedBox(width: 8),
         ],
@@ -156,7 +157,7 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
                             Text(item.productTitle, maxLines: 2, overflow: TextOverflow.ellipsis),
                             const SizedBox(height: 4),
                             Text(
-                              '\$${item.productPrice.toStringAsFixed(2)}',
+                              'Rs ${item.productPrice.toStringAsFixed(2)}',
                               style: const TextStyle(
                                 color: Colors.green,
                                 fontWeight: FontWeight.w600,
@@ -254,6 +255,36 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
     );
   }
 
+  Widget _clearWishlistActionButton(WishlistState state) {
+    final hasItems = state.items.isNotEmpty;
+    final isBusy = state.status == WishlistStatus.updating;
+
+    if (!hasItems) {
+      return const SizedBox.shrink();
+    }
+
+    return TextButton.icon(
+      onPressed: isBusy
+          ? null
+          : () async {
+              final shouldClear = await _confirmClearWishlist(state.items.length);
+              if (!mounted || shouldClear != true) return;
+
+              final success = await ref.read(wishlistNotifierProvider.notifier).clearWishlistOptimistic();
+              if (!context.mounted || !success) return;
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Wishlist cleared.'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+      icon: const Icon(Icons.clear_all, color: Colors.black87),
+      label: const Text('Clear'),
+    );
+  }
+
   Future<bool?> _confirmRemove(String title) {
     return showDialog<bool>(
       context: context,
@@ -268,6 +299,30 @@ class _WishlistPageState extends ConsumerState<WishlistPage> {
           FilledButton.tonal(
             onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool?> _confirmClearWishlist(int itemCount) {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Clear wishlist?'),
+        content: Text(
+          itemCount == 1
+              ? 'This will remove the only item from your wishlist.'
+              : 'This will remove all $itemCount items from your wishlist.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton.tonal(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Clear all'),
           ),
         ],
       ),

@@ -272,8 +272,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                         labelText: 'Price *',
                         hintText: '0.00',
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        prefixIcon: const Icon(Icons.attach_money),
-                        suffixText: 'USD',
+                        prefixIcon: const Icon(Icons.currency_rupee),
+                        suffixText: 'NPR',
                       ),
                       keyboardType: TextInputType.number,
                       validator: (v) {

@@ -15,10 +15,55 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
+  ProviderSubscription<SettingsState>? _settingsSubscription;
+
+  void _showMessage(String message, {required bool isError}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      if (messenger == null) return;
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: isError ? Colors.red : Colors.green,
+        ),
+      );
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+    _settingsSubscription = ref.listenManual<SettingsState>(
+      settingsNotifierProvider,
+      (previous, next) {
+        if (!mounted) return;
+
+        if (next.errorMessage != null && next.errorMessage!.isNotEmpty) {
+          _showMessage(next.errorMessage!, isError: true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            ref.read(settingsNotifierProvider.notifier).clearMessages();
+          });
+        }
+
+        if (next.successMessage != null && next.successMessage!.isNotEmpty) {
+          _showMessage(next.successMessage!, isError: false);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            ref.read(settingsNotifierProvider.notifier).clearMessages();
+          });
+        }
+      },
+    );
     Future.microtask(() => ref.read(settingsNotifierProvider.notifier).loadSettings());
+  }
+
+  @override
+  void dispose() {
+    _settingsSubscription?.close();
+    super.dispose();
   }
 
   @override
@@ -26,24 +71,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final state = ref.watch(settingsNotifierProvider);
     final themeMode = ref.watch(themeModeProvider);
     final shakeEnabled = ref.watch(shakeToToggleProvider);
-
-    ref.listen(settingsNotifierProvider, (previous, next) {
-      if (!mounted) return;
-
-      if (next.errorMessage != null && next.errorMessage!.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.errorMessage!), backgroundColor: Colors.red),
-        );
-        ref.read(settingsNotifierProvider.notifier).clearMessages();
-      }
-
-      if (next.successMessage != null && next.successMessage!.isNotEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.successMessage!), backgroundColor: Colors.green),
-        );
-        ref.read(settingsNotifierProvider.notifier).clearMessages();
-      }
-    });
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
@@ -94,6 +121,28 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   child: Column(
                     children: [
                       ListTile(
+                        leading: const Icon(Icons.security_outlined),
+                        title: const Text('Security'),
+                        subtitle: const Text('Biometric authentication and account security controls.'),
+                      ),
+                      const Divider(height: 1),
+                      SwitchListTile(
+                        value: state.biometricEnabled,
+                        onChanged: state.isSecuritySaving
+                            ? null
+                            : (value) async {
+                                await _handleBiometricToggle(value);
+                              },
+                        secondary: const Icon(Icons.fingerprint),
+                        title: const Text('Enable Fingerprint Login'),
+                        subtitle: Text(
+                          state.biometricAvailable
+                              ? 'Use fingerprint to quickly sign in and unlock app.'
+                              : 'Fingerprint sensor unavailable on this device.',
+                        ),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
                         leading: const Icon(Icons.lock_outline),
                         title: const Text('Change Password'),
                         subtitle: const Text('Update your account password securely.'),
@@ -114,6 +163,81 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ],
             ),
     );
+  }
+
+  Future<void> _handleBiometricToggle(bool enabled) async {
+    if (!mounted) return;
+    final notifier = ref.read(settingsNotifierProvider.notifier);
+
+    if (!enabled) {
+      await notifier.setBiometricEnabled(enabled: false);
+      return;
+    }
+
+    final password = await _showBiometricPasswordDialog();
+    if (!mounted) return;
+    if (password == null || password.isEmpty) {
+      return;
+    }
+
+    await notifier.setBiometricEnabled(enabled: true, accountPassword: password);
+  }
+
+  Future<String?> _showBiometricPasswordDialog() async {
+    if (!mounted) return null;
+    bool obscure = true;
+    String passwordInput = '';
+
+    final result = await showDialog<String?>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setLocalState) {
+            return AlertDialog(
+              title: const Text('Enable Fingerprint Login'),
+              scrollable: true,
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'For security, enter your account password first. Then verify using fingerprint.',
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    obscureText: obscure,
+                    textInputAction: TextInputAction.done,
+                    onChanged: (value) => passwordInput = value,
+                    decoration: InputDecoration(
+                      labelText: 'Account Password',
+                      suffixIcon: IconButton(
+                        onPressed: () => setLocalState(() => obscure = !obscure),
+                        icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final password = passwordInput.trim();
+                    if (password.isEmpty) return;
+                    Navigator.pop(dialogContext, password);
+                  },
+                  child: const Text('Continue'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    return result;
   }
 
   Future<void> _showChangePasswordDialog(BuildContext context) async {
@@ -223,14 +347,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Future<void> _showDeleteAccountFlow(BuildContext context) async {
     final confirmed = await showDialog<bool>(
           context: context,
-          builder: (context) => AlertDialog(
+          builder: (dialogContext) => AlertDialog(
             title: const Text('Delete Account'),
             content: const Text('This action is permanent and cannot be undone.'),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+              TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
               FilledButton(
                 style: FilledButton.styleFrom(backgroundColor: Colors.red),
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () => Navigator.pop(dialogContext, true),
                 child: const Text('Continue'),
               ),
             ],
@@ -240,19 +364,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     if (!confirmed || !context.mounted) return;
 
-    final passwordController = TextEditingController();
-    bool obscurePassword = true;
-
-    await showDialog<void>(
+    final password = await showDialog<String?>(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
+        bool obscurePassword = true;
+        String passwordInput = '';
+
         return StatefulBuilder(
-          builder: (context, setLocalState) {
+          builder: (dialogContext, setLocalState) {
             return AlertDialog(
               title: const Text('Confirm Password'),
               content: TextField(
-                controller: passwordController,
                 obscureText: obscurePassword,
+                onChanged: (value) => passwordInput = value,
                 decoration: InputDecoration(
                   labelText: 'Password',
                   suffixIcon: IconButton(
@@ -262,21 +386,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
                 FilledButton(
                   style: FilledButton.styleFrom(backgroundColor: Colors.red),
-                  onPressed: () async {
-                    final password = passwordController.text.trim();
-                    if (password.isEmpty) return;
-
-                    final ok = await ref.read(settingsNotifierProvider.notifier).deleteAccount(password: password);
-                    if (!context.mounted) return;
-
-                    if (ok) {
-                      await sl<AuthLocalDataSource>().clearCache();
-                      if (!context.mounted) return;
-                      Navigator.pushNamedAndRemoveUntil(context, '/login', (_) => false);
-                    }
+                  onPressed: () {
+                    final trimmed = passwordInput.trim();
+                    if (trimmed.isEmpty) return;
+                    Navigator.pop(dialogContext, trimmed);
                   },
                   child: const Text('Delete'),
                 ),
@@ -287,6 +403,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       },
     );
 
-    passwordController.dispose();
+    if (password == null || password.trim().isEmpty || !mounted) return;
+
+    final ok = await ref.read(settingsNotifierProvider.notifier).deleteAccount(password: password.trim());
+    if (!mounted || !ok) return;
+
+    await sl<AuthLocalDataSource>().clearCache();
+    if (!mounted) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil('/login', (_) => false);
+    });
   }
 }

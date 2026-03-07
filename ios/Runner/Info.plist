@@ -57,5 +57,7 @@
 	<string>Photo library access is needed so you can choose a profile picture.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Photo library access is needed for profile picture updates.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Use Face ID to quickly and securely unlock CampusBazar.</string>
 </dict>
 </plist>

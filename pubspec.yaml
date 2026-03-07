@@ -35,6 +35,7 @@ dependencies:
 
   # Secure Storage
   flutter_secure_storage: ^9.0.0
+  local_auth: ^2.3.0
 
   # Equatable for value equality
   equatable: ^2.0.5

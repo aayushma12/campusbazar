@@ -178,7 +178,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  '\$${item.price.toStringAsFixed(2)}',
+                                  'Rs ${item.price.toStringAsFixed(2)}',
                                   style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
                                 ),
                                 const SizedBox(height: 4),

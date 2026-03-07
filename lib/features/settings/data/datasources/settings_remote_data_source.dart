@@ -29,11 +29,28 @@ class SettingsRemoteDataSourceImpl implements SettingsRemoteDataSource {
   Future<SettingsData> getSettings() async {
     try {
       final response = await _apiClient.get(ApiEndpoints.profileSettings);
-      final data = response.data as Map<String, dynamic>;
       return SettingsData(
-        pushNotificationsEnabled: data['pushNotificationsEnabled'] == true,
+        pushNotificationsEnabled: _extractPushNotificationsEnabled(response.data),
       );
     } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+
+      // Backward compatibility: some backend versions do not expose
+      // /users/me/settings yet. In that case, fallback to profile endpoint and
+      // avoid blocking the Settings page.
+      if (statusCode == 404) {
+        try {
+          final profileResponse = await _apiClient.get(ApiEndpoints.profile);
+          return SettingsData(
+            pushNotificationsEnabled: _extractPushNotificationsEnabled(profileResponse.data),
+          );
+        } on DioException {
+          // If even profile payload doesn't provide this info, keep a safe default
+          // and let the page render without a hard error.
+          return const SettingsData(pushNotificationsEnabled: true);
+        }
+      }
+
       throw Exception(_parseError(e, fallback: 'Failed to load settings'));
     }
   }
@@ -97,5 +114,39 @@ class SettingsRemoteDataSourceImpl implements SettingsRemoteDataSource {
       if (msg != null && msg.isNotEmpty) return msg;
     }
     return e.message ?? fallback;
+  }
+
+  bool _extractPushNotificationsEnabled(dynamic raw) {
+    if (raw is! Map<String, dynamic>) {
+      return true;
+    }
+
+    final data = raw['data'];
+    final dataMap = data is Map<String, dynamic> ? data : const <String, dynamic>{};
+
+    final candidates = <dynamic>[
+      raw['pushNotificationsEnabled'],
+      raw['pushNotificationEnabled'],
+      raw['notificationsEnabled'],
+      raw['notificationEnabled'],
+      dataMap['pushNotificationsEnabled'],
+      dataMap['pushNotificationEnabled'],
+      dataMap['notificationsEnabled'],
+      dataMap['notificationEnabled'],
+    ];
+
+    for (final value in candidates) {
+      if (value is bool) return value;
+      if (value is String) {
+        final normalized = value.trim().toLowerCase();
+        if (normalized == 'true') return true;
+        if (normalized == 'false') return false;
+      }
+      if (value is num) {
+        return value != 0;
+      }
+    }
+
+    return true;
   }
 }

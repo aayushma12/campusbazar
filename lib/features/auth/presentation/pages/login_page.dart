@@ -14,6 +14,10 @@ class LoginPage extends ConsumerStatefulWidget {
 class _LoginPageState extends ConsumerState<LoginPage> {
   bool rememberMe = false;
   bool passwordVisible = false;
+  bool _canUseBiometricLogin = false;
+  bool _authSuccessHandled = false;
+  bool _autoBiometricAttempted = false;
+  ProviderSubscription<AuthState>? _authSubscription;
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -21,7 +25,58 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
 
   @override
+  void initState() {
+    super.initState();
+    _authSubscription = ref.listenManual<AuthState>(
+      authViewModelProvider,
+      (previous, next) {
+        if (!mounted) return;
+
+        if (next.status == AuthStatus.authenticated && !_authSuccessHandled) {
+          _authSuccessHandled = true;
+          _handlePostLoginSuccess(next);
+        } else if (next.status == AuthStatus.error && next.errorMessage != null) {
+          _authSuccessHandled = false;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(next.errorMessage!),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+    );
+    _loadRememberMePreference();
+    _loadBiometricAvailability();
+  }
+
+  Future<void> _loadRememberMePreference() async {
+    final remember = await ref.read(authViewModelProvider.notifier).getRememberMePreference();
+    if (!mounted) return;
+    setState(() {
+      rememberMe = remember;
+    });
+  }
+
+  Future<void> _loadBiometricAvailability() async {
+    final enabled = await ref.read(authViewModelProvider.notifier).isBiometricLoginEnabled();
+    if (!mounted) return;
+    setState(() {
+      _canUseBiometricLogin = enabled;
+    });
+
+    if (enabled && !_autoBiometricAttempted) {
+      _autoBiometricAttempted = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _handleBiometricLogin(showFailureMessage: false);
+      });
+    }
+  }
+
+  @override
   void dispose() {
+    _authSubscription?.close();
     _emailController.dispose(); //email controller
     _passwordController.dispose(); //password controller
     super.dispose();
@@ -32,25 +87,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final size = MediaQuery.of(context).size;
     final bool isTablet = size.width > 600;
     final authState = ref.watch(authViewModelProvider);
-
-    ref.listen<AuthState>(authViewModelProvider, (previous, next) {
-      if (next.status == AuthStatus.authenticated) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Welcome back, ${next.user?.name ?? 'User'}!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pushReplacementNamed(context, '/dashboard');
-      } else if (next.status == AuthStatus.error && next.errorMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.errorMessage!),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    });
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -228,6 +264,22 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                   ),
 
+                  if (_canUseBiometricLogin) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: isTablet ? 56 : 48,
+                      child: OutlinedButton.icon(
+                        onPressed: authState.isLoading ? null : _handleBiometricLogin,
+                        icon: const Icon(Icons.fingerprint, color: Colors.green),
+                        label: const Text(
+                          'Login with Biometrics',
+                          style: TextStyle(color: Colors.green),
+                        ),
+                      ),
+                    ),
+                  ],
+
                   const SizedBox(height: 30),
 
                   // DON'T HAVE AN ACCOUNT SIGNUP
@@ -258,6 +310,40 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       ),
     );
   }
+
+  Future<void> _handlePostLoginSuccess(AuthState state) async {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Welcome back, ${state.user?.name ?? 'User'}!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, '/dashboard');
+  }
+
+  Future<void> _handleBiometricLogin({bool showFailureMessage = true}) async {
+    final success = await ref.read(authViewModelProvider.notifier).authenticateWithBiometrics();
+
+    if (!mounted) return;
+
+    if (success) {
+      Navigator.pushReplacementNamed(context, '/dashboard');
+      return;
+    }
+
+    if (showFailureMessage) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Biometric authentication failed. Please login with email and password.'),
+        ),
+      );
+    }
+  }
+
 //login handle
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
@@ -266,6 +352,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           .login(
             email: _emailController.text.trim(), //email
             password: _passwordController.text, //password
+            rememberMe: rememberMe,
           );
     }
   }

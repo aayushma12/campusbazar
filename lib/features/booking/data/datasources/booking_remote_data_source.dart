@@ -135,14 +135,59 @@ class BookingRemoteDataSourceImpl implements BookingRemoteDataSource {
   Future<double> fetchWalletBalance() async {
     try {
       final response = await _apiClient.get(ApiEndpoints.bookingWallet);
-      final body = response.data as Map<String, dynamic>;
-      final data = body['data'] as Map<String, dynamic>? ?? const {};
-      final available = (data['balance'] as num?)?.toDouble() ?? 0;
-      final pending = (data['pendingBalance'] as num?)?.toDouble() ?? 0;
+      final body = response.data;
+      if (body is! Map<String, dynamic>) {
+        return 0;
+      }
+
+      final dataRaw = body['data'];
+      final data = dataRaw is Map<String, dynamic> ? dataRaw : const <String, dynamic>{};
+
+      // Common payload shapes seen across backend versions:
+      // 1) { data: { walletAmount: 1200 } }
+      // 2) { data: { balance: 1000, pendingBalance: 200 } }
+      // 3) { balance: 1000, pendingBalance: 200 }
+      final walletAmount = _readAmount(data, const ['walletAmount', 'amount', 'walletBalance', 'totalBalance']);
+      if (walletAmount != null) {
+        return walletAmount;
+      }
+
+      final available = _readAmount(
+            data,
+            const ['balance', 'availableBalance', 'available', 'currentBalance'],
+          ) ??
+          _readAmount(
+            body,
+            const ['balance', 'availableBalance', 'available', 'currentBalance'],
+          ) ??
+          0;
+
+      final pending = _readAmount(
+            data,
+            const ['pendingBalance', 'pending', 'holdBalance'],
+          ) ??
+          _readAmount(
+            body,
+            const ['pendingBalance', 'pending', 'holdBalance'],
+          ) ??
+          0;
+
       return available + pending;
     } on DioException catch (e) {
       throw Exception(_parseError(e, fallback: 'Failed to fetch wallet balance'));
     }
+  }
+
+  double? _readAmount(Map<String, dynamic> map, List<String> keys) {
+    for (final key in keys) {
+      final value = map[key];
+      if (value is num) return value.toDouble();
+      if (value is String) {
+        final parsed = double.tryParse(value.trim());
+        if (parsed != null) return parsed;
+      }
+    }
+    return null;
   }
 
   String _parseError(DioException e, {required String fallback}) {

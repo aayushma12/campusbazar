@@ -69,7 +69,12 @@ class WishlistNotifier extends Notifier<WishlistState> {
   WishlistState build() => const WishlistState();
 
   Future<void> loadWishlist() async {
-    state = state.copyWith(status: WishlistStatus.loading, clearError: true, unauthorized: false);
+    state = state.copyWith(
+      status: WishlistStatus.loading,
+      clearError: true,
+      unauthorized: false,
+      updatingProductIds: const {},
+    );
 
     final result = await ref.read(getWishlistUseCaseProvider).call();
     result.fold(
@@ -78,10 +83,17 @@ class WishlistNotifier extends Notifier<WishlistState> {
           status: WishlistStatus.error,
           errorMessage: failure.message,
           unauthorized: _isUnauthorized(failure.message),
+          updatingProductIds: const {},
         );
       },
       (items) {
-        state = state.copyWith(status: WishlistStatus.loaded, items: items, clearError: true, unauthorized: false);
+        state = state.copyWith(
+          status: WishlistStatus.loaded,
+          items: items,
+          clearError: true,
+          unauthorized: false,
+          updatingProductIds: const {},
+        );
       },
     );
   }
@@ -182,6 +194,59 @@ class WishlistNotifier extends Notifier<WishlistState> {
         );
       },
     );
+  }
+
+  Future<bool> clearWishlistOptimistic() async {
+    if (state.items.isEmpty) return true;
+    if (state.updatingProductIds.isNotEmpty) return false;
+
+    final previousItems = List<WishlistItem>.from(state.items);
+    final clearingSet = previousItems.map((e) => e.productId).toSet();
+
+    state = state.copyWith(
+      status: WishlistStatus.updating,
+      items: const [],
+      updatingProductIds: clearingSet,
+      clearError: true,
+      unauthorized: false,
+    );
+
+    int failedCount = 0;
+    String? firstError;
+    bool unauthorized = false;
+
+    for (final item in previousItems) {
+      final result = await ref.read(removeFromWishlistUseCaseProvider).call(item.productId);
+      result.fold(
+        (failure) {
+          failedCount += 1;
+          firstError ??= failure.message;
+          unauthorized = unauthorized || _isUnauthorized(failure.message);
+        },
+        (_) {},
+      );
+    }
+
+    if (failedCount > 0) {
+      state = state.copyWith(
+        status: WishlistStatus.error,
+        items: previousItems,
+        updatingProductIds: const {},
+        errorMessage:
+            failedCount == 1 ? (firstError ?? 'Failed to clear wishlist.') : 'Failed to remove $failedCount items from wishlist.',
+        unauthorized: unauthorized,
+      );
+      return false;
+    }
+
+    state = state.copyWith(
+      status: WishlistStatus.loaded,
+      items: const [],
+      updatingProductIds: const {},
+      clearError: true,
+      unauthorized: false,
+    );
+    return true;
   }
 
   Future<WishlistAddToCartResult> addToCartFromWishlist(String productId, {int quantity = 1}) async {

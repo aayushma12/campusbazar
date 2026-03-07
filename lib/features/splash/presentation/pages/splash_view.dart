@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/services/service_locator.dart';
+import '../../../../core/services/security/biometric_auth_service.dart';
 import '../../../auth/data/datasources/auth_local_data_source.dart';
 
 class SplashView extends StatefulWidget {
@@ -19,10 +20,38 @@ class _SplashViewState extends State<SplashView> {
     _timer = Timer(const Duration(milliseconds: 1800), () async {
       if (!mounted) return;
       final authLocal = sl<AuthLocalDataSource>();
+      final biometricService = sl<BiometricAuthService>();
       final token = await authLocal.getToken();
+      final rememberMe = await authLocal.isRememberMeEnabled();
       if (!mounted) return;
 
       if (token != null && token.isNotEmpty) {
+        if (!rememberMe) {
+          await authLocal.clearCache();
+          await biometricService.disableBiometric();
+          if (!mounted) return;
+          Navigator.pushReplacementNamed(context, '/login');
+          return;
+        }
+
+        final biometricEnabled = await biometricService.isBiometricEnabled();
+        final available = await biometricService.isBiometricAvailable();
+
+        if (biometricEnabled && available) {
+          final authenticated = await biometricService.authenticate(
+            localizedReason: 'Authenticate to continue to CampusBazar',
+          );
+
+          if (!mounted) return;
+
+          if (authenticated) {
+            Navigator.pushReplacementNamed(context, '/dashboard');
+          } else {
+            Navigator.pushReplacementNamed(context, '/login');
+          }
+          return;
+        }
+
         Navigator.pushReplacementNamed(context, '/dashboard');
       } else {
         Navigator.pushReplacementNamed(context, '/onboarding1');
