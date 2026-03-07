@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/service_locator.dart';
 import '../../../../core/usecases/usecase.dart';
+import '../../domain/entities/profile_entity.dart';
 import '../../domain/usecases/get_profile_usecase.dart';
 import '../../domain/usecases/update_profile_usecase.dart';
 import '../state/profile_state.dart';
@@ -46,6 +47,7 @@ class ProfileViewModel extends Notifier<ProfileState> {
   }
 
   Future<void> updateProfile({
+    required Profile originalProfile,
     String? name,
     String? phoneNumber,
     String? studentId,
@@ -63,14 +65,47 @@ class ProfileViewModel extends Notifier<ProfileState> {
     );
 
     final Map<String, dynamic> body = {};
-    if (name != null && name.trim().isNotEmpty) body['name'] = name.trim();
-    if (phoneNumber != null && phoneNumber.trim().isNotEmpty) body['phoneNumber'] = phoneNumber.trim();
-    if (studentId != null && studentId.trim().isNotEmpty) body['studentId'] = studentId.trim();
-    if (batch != null && batch.trim().isNotEmpty) body['batch'] = batch.trim();
-    if (collegeId != null && collegeId.trim().isNotEmpty) body['collegeId'] = collegeId.trim();
-    if (university != null && university.trim().isNotEmpty) body['university'] = university.trim();
-    if (campus != null && campus.trim().isNotEmpty) body['campus'] = campus.trim();
-    if (bio != null && bio.trim().isNotEmpty) body['bio'] = bio.trim();
+    final normalizedName = (name ?? '').trim();
+    if (normalizedName.isNotEmpty && normalizedName != originalProfile.name.trim()) {
+      body['name'] = normalizedName;
+    }
+
+    String normalize(String? value) => (value ?? '').trim();
+
+    final normalizedPhoneNumber = normalize(phoneNumber);
+    if (normalizedPhoneNumber != normalize(originalProfile.phoneNumber)) {
+      body['phoneNumber'] = normalizedPhoneNumber;
+    }
+
+    final normalizedStudentId = normalize(studentId);
+    if (normalizedStudentId != normalize(originalProfile.studentId)) {
+      body['studentId'] = normalizedStudentId;
+    }
+
+    final normalizedBatch = normalize(batch);
+    if (normalizedBatch != normalize(originalProfile.batch)) {
+      body['batch'] = normalizedBatch;
+    }
+
+    final normalizedCollegeId = normalize(collegeId);
+    if (normalizedCollegeId != normalize(originalProfile.collegeId)) {
+      body['collegeId'] = normalizedCollegeId;
+    }
+
+    final normalizedUniversity = normalize(university);
+    if (normalizedUniversity != normalize(originalProfile.university)) {
+      body['university'] = normalizedUniversity;
+    }
+
+    final normalizedCampus = normalize(campus);
+    if (normalizedCampus != normalize(originalProfile.campus)) {
+      body['campus'] = normalizedCampus;
+    }
+
+    final normalizedBio = normalize(bio);
+    if (normalizedBio != normalize(originalProfile.bio)) {
+      body['bio'] = normalizedBio;
+    }
 
     if (body.isEmpty && imageFile == null) {
       state = state.copyWith(
@@ -80,23 +115,32 @@ class ProfileViewModel extends Notifier<ProfileState> {
       return;
     }
 
-    final result = await _updateProfileUseCase(
-      UpdateProfileParams(body: body, imageFile: imageFile),
-    );
+    try {
+      final result = await _updateProfileUseCase(
+        UpdateProfileParams(body: body, imageFile: imageFile),
+      );
 
-    result.fold(
-      (failure) => state = state.copyWith(
+      result.fold(
+        (failure) => state = state.copyWith(
+          status: ProfileStatus.error,
+          errorMessage: failure.message,
+          clearSuccess: true,
+        ),
+        (profile) => state = state.copyWith(
+          status: ProfileStatus.success,
+          profile: profile,
+          successMessage: 'Profile updated successfully',
+          clearError: true,
+        ),
+      );
+    } catch (e) {
+      final message = e.toString().replaceFirst('Exception: ', '').trim();
+      state = state.copyWith(
         status: ProfileStatus.error,
-        errorMessage: failure.message,
+        errorMessage: message.isEmpty ? 'Failed to update profile' : message,
         clearSuccess: true,
-      ),
-      (profile) => state = state.copyWith(
-        status: ProfileStatus.success,
-        profile: profile,
-        successMessage: 'Profile updated successfully',
-        clearError: true,
-      ),
-    );
+      );
+    }
   }
 
   void clearMessages() {

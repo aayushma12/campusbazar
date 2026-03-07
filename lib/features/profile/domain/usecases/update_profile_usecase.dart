@@ -5,7 +5,7 @@ import '../../../../core/usecases/usecase.dart';
 import '../entities/profile_entity.dart';
 import '../repositories/profile_repository.dart';
 
-/// Updates profile using backend PATCH /api/v1/users/me endpoint.
+/// Updates profile using backend PATCH /api/v1/profile endpoint.
 class UpdateProfileUseCase implements UseCase<Profile, UpdateProfileParams> {
   final ProfileRepository repository;
 

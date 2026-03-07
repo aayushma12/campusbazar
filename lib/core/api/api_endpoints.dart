@@ -59,7 +59,14 @@ class ApiEndpoints {
   static const String forgotPassword = '/api/v1/auth/forgot-password';
   static const String verifyOtp = '/api/v1/auth/verify-otp';
   static const String resetPassword = '/api/v1/auth/reset-password';
-  static const String profile = '/api/v1/users/me';
+  static const String profile = '/api/v1/profile';
+  static const String profileLegacy = '/api/profile';
+  static const String profileUpdate = '/api/v1/profile/update';
+  static const String profileLegacyUpdate = '/api/profile/update';
+
+  // Backward-compatibility aliases for older backend variants.
+  static const String profileUserMe = '/api/v1/users/me';
+  static const String profileUserLegacy = '/api/user/profile';
   static const String profileSettings = '/api/v1/users/me/settings';
   static const String profilePushSettings = '/api/v1/users/me/settings/notifications';
   static const String profileChangePassword = '/api/v1/users/me/change-password';

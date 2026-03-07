@@ -13,49 +13,74 @@ class SplashView extends StatefulWidget {
 
 class _SplashViewState extends State<SplashView> {
   Timer? _timer;
+  bool _navigated = false;
+
+  static const Duration _splashDelay = Duration(milliseconds: 1800);
+  static const Duration _startupTimeout = Duration(seconds: 8);
+
+  Future<void> _navigateTo(String routeName) async {
+    if (!mounted || _navigated) return;
+    _navigated = true;
+    Navigator.pushReplacementNamed(context, routeName);
+  }
+
+  Future<void> _resolveInitialRoute() async {
+    try {
+      final authLocal = sl<AuthLocalDataSource>();
+
+      // Never let secure storage / plugin calls block startup forever.
+      final token = await authLocal.getToken().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => null,
+      );
+
+      if (!mounted) return;
+
+      if (token == null || token.isEmpty) {
+        await _navigateTo('/onboarding1');
+        return;
+      }
+
+      final rememberMe = await authLocal.isRememberMeEnabled().timeout(
+        const Duration(seconds: 2),
+        onTimeout: () => true,
+      );
+
+      if (!mounted) return;
+
+      if (!rememberMe) {
+        // Best-effort cleanup only. Do not block route transition.
+        try {
+          await authLocal.clearCache().timeout(const Duration(seconds: 2));
+          await sl<BiometricAuthService>()
+              .disableBiometric()
+              .timeout(const Duration(seconds: 2));
+        } catch (_) {
+          // Ignore cleanup failures and continue to login.
+        }
+        await _navigateTo('/login');
+        return;
+      }
+
+      // Avoid blocking splash on biometric prompt/plugin behavior.
+      // App lock can still enforce biometrics after dashboard appears.
+      await _navigateTo('/dashboard');
+    } catch (_) {
+      // Guaranteed fallback so splash cannot get stuck.
+      await _navigateTo('/login');
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer(const Duration(milliseconds: 1800), () async {
-      if (!mounted) return;
-      final authLocal = sl<AuthLocalDataSource>();
-      final biometricService = sl<BiometricAuthService>();
-      final token = await authLocal.getToken();
-      final rememberMe = await authLocal.isRememberMeEnabled();
-      if (!mounted) return;
-
-      if (token != null && token.isNotEmpty) {
-        if (!rememberMe) {
-          await authLocal.clearCache();
-          await biometricService.disableBiometric();
-          if (!mounted) return;
-          Navigator.pushReplacementNamed(context, '/login');
-          return;
-        }
-
-        final biometricEnabled = await biometricService.isBiometricEnabled();
-        final available = await biometricService.isBiometricAvailable();
-
-        if (biometricEnabled && available) {
-          final authenticated = await biometricService.authenticate(
-            localizedReason: 'Authenticate to continue to CampusBazar',
-          );
-
-          if (!mounted) return;
-
-          if (authenticated) {
-            Navigator.pushReplacementNamed(context, '/dashboard');
-          } else {
-            Navigator.pushReplacementNamed(context, '/login');
-          }
-          return;
-        }
-
-        Navigator.pushReplacementNamed(context, '/dashboard');
-      } else {
-        Navigator.pushReplacementNamed(context, '/onboarding1');
-      }
+    _timer = Timer(_splashDelay, () {
+      _resolveInitialRoute().timeout(
+        _startupTimeout,
+        onTimeout: () async {
+          await _navigateTo('/login');
+        },
+      );
     });
   }
 

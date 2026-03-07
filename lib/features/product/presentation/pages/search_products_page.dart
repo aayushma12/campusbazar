@@ -6,8 +6,8 @@ import '../view_model/product_viewmodel.dart';
 import '../widgets/product_card.dart';
 
 class SearchProductsPage extends ConsumerStatefulWidget {
-  const SearchProductsPage({super.key});
 
+  const SearchProductsPage({super.key});
   @override
   ConsumerState<SearchProductsPage> createState() => _SearchProductsPageState();
 }

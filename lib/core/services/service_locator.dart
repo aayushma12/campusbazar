@@ -135,9 +135,9 @@ Future<void> setupLocator() async {
   sl.registerLazySingleton(() => BiometricAuthService());
   // sl.registerLazySingleton(() => InternetConnectionChecker());
   
-  // Hive Boxes
-  final authBox = await Hive.openBox('authBox');
-  final profileBox = await Hive.openBox('profileBox');
+  // Hive Boxes (with corruption recovery)
+  final authBox = await _openBoxWithRecovery('authBox');
+  final profileBox = await _openBoxWithRecovery('profileBox');
   sl.registerLazySingleton<Box>(() => authBox, instanceName: 'authBox');
   sl.registerLazySingleton<Box>(() => profileBox, instanceName: 'profileBox');
 
@@ -151,4 +151,23 @@ Future<void> setupLocator() async {
   // The guide has AuthRemoteDataSource taking Dio.
   // Let's manually trigger ApiClient init or just resolve it.
   sl<ApiClient>(); // Force init
+}
+
+Future<Box> _openBoxWithRecovery(String boxName) async {
+  try {
+    return await Hive.openBox(boxName);
+  } catch (e) {
+    // Recovery path for corrupted/incompatible local cache frames.
+    // Example symptom: RangeError "Not enough bytes available" while opening box.
+    try {
+      if (Hive.isBoxOpen(boxName)) {
+        await Hive.box(boxName).close();
+      }
+    } catch (_) {
+      // ignore close failures
+    }
+
+    await Hive.deleteBoxFromDisk(boxName);
+    return Hive.openBox(boxName);
+  }
 }
