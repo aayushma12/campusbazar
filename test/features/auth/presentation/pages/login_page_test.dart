@@ -11,14 +11,16 @@ class TestAuthViewModel extends AuthViewModel {
   final AuthState initialState;
   String? lastEmail;
   String? lastPassword;
+  bool? lastRememberMe;
 
   @override
   AuthState build() => initialState;
 
   @override
-  Future<void> login({required String email, required String password}) async {
+  Future<void> login({required String email, required String password, required bool rememberMe}) async {
     lastEmail = email;
     lastPassword = password;
+    lastRememberMe = rememberMe;
   }
 }
 

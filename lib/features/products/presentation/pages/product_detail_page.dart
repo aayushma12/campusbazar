@@ -248,7 +248,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
           const SizedBox(height: 16),
           Text(product.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
           const SizedBox(height: 6),
-          Text('\$${product.price.toStringAsFixed(2)}', style: const TextStyle(fontSize: 20, color: Colors.green)),
+          Text('Rs ${product.price.toStringAsFixed(2)}', style: const TextStyle(fontSize: 20, color: Colors.green)),
           const SizedBox(height: 12),
           Row(
             children: [

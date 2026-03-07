@@ -21,6 +21,8 @@ class ShakeThemeListener extends ConsumerStatefulWidget {
 
 class _ShakeThemeListenerState extends ConsumerState<ShakeThemeListener> {
   StreamSubscription<UserAccelerometerEvent>? _accelerometerSub;
+  ProviderSubscription<bool>? _shakeSettingSubscription;
+  bool _toggleQueued = false;
 
   DateTime _lastToggleAt = DateTime.fromMillisecondsSinceEpoch(0);
   DateTime _lastSpikeAt = DateTime.fromMillisecondsSinceEpoch(0);
@@ -35,6 +37,13 @@ class _ShakeThemeListenerState extends ConsumerState<ShakeThemeListener> {
   @override
   void initState() {
     super.initState();
+    _shakeSettingSubscription = ref.listenManual<bool>(shakeToToggleProvider, (
+      previous,
+      next,
+    ) {
+      if (!mounted) return;
+      _setupSubscription();
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) => _setupSubscription());
   }
 
@@ -46,6 +55,7 @@ class _ShakeThemeListenerState extends ConsumerState<ShakeThemeListener> {
 
   @override
   void dispose() {
+    _shakeSettingSubscription?.close();
     _accelerometerSub?.cancel();
     super.dispose();
   }
@@ -64,7 +74,9 @@ class _ShakeThemeListenerState extends ConsumerState<ShakeThemeListener> {
       return;
     }
 
-    _accelerometerSub ??= userAccelerometerEventStream().listen(_onAccelerometerEvent);
+    _accelerometerSub ??= userAccelerometerEventStream().listen(
+      _onAccelerometerEvent,
+    );
   }
 
   Future<void> _onAccelerometerEvent(UserAccelerometerEvent event) async {
@@ -74,7 +86,9 @@ class _ShakeThemeListenerState extends ConsumerState<ShakeThemeListener> {
     final now = DateTime.now();
     if (now.difference(_lastToggleAt) < _cooldown) return;
 
-    final magnitude = math.sqrt(event.x * event.x + event.y * event.y + event.z * event.z);
+    final magnitude = math.sqrt(
+      event.x * event.x + event.y * event.y + event.z * event.z,
+    );
     if (magnitude < _shakeThreshold) return;
 
     final previousSpikeAt = _lastSpikeAt;
@@ -96,26 +110,38 @@ class _ShakeThemeListenerState extends ConsumerState<ShakeThemeListener> {
     _shakeCount = 0;
     _lastToggleAt = now;
 
-    final current = ref.read(themeModeProvider);
-    final isDark = current == ThemeMode.dark;
-    await ref.read(themeModeProvider.notifier).toggleDarkMode(!isDark);
+    if (_toggleQueued) return;
+    _toggleQueued = true;
 
-    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _toggleQueued = false;
+      if (!mounted) return;
+      if (!ref.read(shakeToToggleProvider)) return;
 
-    HapticFeedback.lightImpact();
+      final current = ref.read(themeModeProvider);
+      final isDark = current == ThemeMode.dark;
+      await ref.read(themeModeProvider.notifier).toggleDarkMode(!isDark);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        duration: const Duration(milliseconds: 1400),
-        content: Text(!isDark ? 'Dark Mode Activated 🌙' : 'Light Mode Activated ☀️'),
-      ),
-    );
+      if (!mounted) return;
+
+      HapticFeedback.lightImpact();
+
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      if (messenger == null) return;
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          duration: const Duration(milliseconds: 1400),
+          content: Text(
+            !isDark ? 'Dark Mode Activated 🌙' : 'Light Mode Activated ☀️',
+          ),
+        ),
+      );
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // Keep subscription in sync with setting changes without rebuilding app tree.
-    ref.listen<bool>(shakeToToggleProvider, (previous, next) => _setupSubscription());
     return widget.child;
   }
 }

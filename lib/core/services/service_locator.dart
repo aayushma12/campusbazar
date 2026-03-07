@@ -40,6 +40,7 @@ import '../../features/category/domain/repositories/category_repository.dart';
 import '../../features/transaction/data/datasources/transaction_remote_data_source.dart';
 import '../../features/transaction/data/repositories/transaction_repository_impl.dart';
 import '../../features/transaction/domain/repositories/transaction_repository.dart';
+import 'security/biometric_auth_service.dart';
 
 final sl = GetIt.instance;
 
@@ -131,6 +132,7 @@ Future<void> setupLocator() async {
 
   // External
   sl.registerLazySingleton(() => Dio());
+  sl.registerLazySingleton(() => BiometricAuthService());
   // sl.registerLazySingleton(() => InternetConnectionChecker());
   
   // Hive Boxes

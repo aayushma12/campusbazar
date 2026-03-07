@@ -234,7 +234,7 @@ class _CartPageState extends ConsumerState<CartPage> {
               children: [
                 const Text('Subtotal', style: TextStyle(fontSize: 15, color: Colors.black87)),
                 Text(
-                  '\$${state.summary.subtotal.toStringAsFixed(2)}',
+                  'Rs ${state.summary.subtotal.toStringAsFixed(2)}',
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
                 ),
               ],
